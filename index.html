@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,23 +15,19 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
-        
         .custom-scrollbar::-webkit-scrollbar-track {
             background: #1f2937;
         }
-        
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #4b5563;
             border-radius: 3px;
         }
     </style>
 </head>
-
 <body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
 
     <!-- Notificaciones flotantes personalizadas -->
@@ -66,10 +61,10 @@
 
     <!-- Contenedor Principal -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
+        
         <!-- Panel de Control Superior (Resumen de Métricas & Cotizador CCL) -->
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-
+            
             <!-- Tarjeta Dólar CCL (Tu Control Lateral del Tipo de Cambio) -->
             <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col justify-between shadow-xl">
                 <div>
@@ -80,8 +75,7 @@
                     <h3 class="text-sm font-medium text-gray-400">Dólar CCL Referencia</h3>
                     <div class="mt-2 flex items-center space-x-2">
                         <span class="text-gray-500 font-bold text-xl">$</span>
-                        <input id="ccl-input" type="number" value="1480.70" step="0.1" class="w-full bg-gray-950 border border-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg py-1.5 px-3 text-white text-lg font-bold focus:outline-none transition-all"
-                            placeholder="Ej: 1480.70">
+                        <input id="ccl-input" type="number" value="1480.70" step="0.1" class="w-full bg-gray-950 border border-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg py-1.5 px-3 text-white text-lg font-bold focus:outline-none transition-all" placeholder="Ej: 1480.70">
                     </div>
                     <p class="text-[10px] text-gray-500 mt-1.5">Al cambiar este valor, todo tu portafolio se recalcula al instante en USD.</p>
                 </div>
@@ -153,14 +147,14 @@
 
         <!-- Cuerpo de Carga e Historial de Gráficos -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-
+            
             <!-- Columna Izquierda: Formulario de Carga -->
             <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-xl flex flex-col justify-between">
                 <div>
                     <h2 class="text-base font-bold text-white mb-4 flex items-center">
                         <i class="fa-solid fa-plus-circle text-emerald-500 mr-2"></i> Registrar Nueva Compra
                     </h2>
-
+                    
                     <form id="form-compra" class="space-y-4">
                         <div>
                             <label class="block text-xs font-medium text-gray-400 mb-1">Elegir Activo</label>
@@ -181,13 +175,11 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-medium text-gray-400 mb-1">Cantidad</label>
-                                <input id="compra-cantidad" type="number" min="1" step="1" required class="w-full bg-gray-950 border border-gray-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg py-2 px-3 text-white text-sm focus:outline-none transition-all"
-                                    placeholder="Ej: 5">
+                                <input id="compra-cantidad" type="number" min="1" step="1" required class="w-full bg-gray-950 border border-gray-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg py-2 px-3 text-white text-sm focus:outline-none transition-all" placeholder="Ej: 5">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-400 mb-1">Precio Unitario ($ ARS)</label>
-                                <input id="compra-precio" type="number" min="0" step="0.01" required class="w-full bg-gray-950 border border-gray-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg py-2 px-3 text-white text-sm focus:outline-none transition-all"
-                                    placeholder="Ej: 23510">
+                                <input id="compra-precio" type="number" min="0" step="0.01" required class="w-full bg-gray-950 border border-gray-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg py-2 px-3 text-white text-sm focus:outline-none transition-all" placeholder="Ej: 23510">
                             </div>
                         </div>
 
@@ -206,8 +198,7 @@
                     <div class="bg-gray-950 rounded-lg p-3.5 border border-gray-800/60">
                         <h4 class="text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider"><i class="fa-solid fa-circle-info text-blue-400 mr-1"></i> Base Pre-Cargada</h4>
                         <p class="text-[11px] text-gray-400 leading-relaxed">
-                            El sistema ya inicia con tus <strong class="text-white">51 CEDEARs de Amazon y Walmart</strong>. Podés pulsar el botón de <strong class="text-indigo-400">Actualizar Cotizaciones</strong> arriba a la derecha para actualizar
-                            todas las valuaciones en vivo.
+                            El sistema ya inicia con tus <strong class="text-white">51 CEDEARs de Amazon y Walmart</strong>. Podés pulsar el botón de <strong class="text-indigo-400">Actualizar Cotizaciones</strong> arriba a la derecha para actualizar todas las valuaciones en vivo.
                         </p>
                     </div>
                 </div>
@@ -249,7 +240,7 @@
                     </h2>
                     <p class="text-xs text-gray-400 mt-0.5">Modificá los precios de mercado directamente en los inputs si querés simular variaciones (se guardan en tu moneda activa).</p>
                 </div>
-
+                
                 <div class="flex flex-wrap items-center gap-3">
                     <!-- Switch / Filtro para alternar visualización de tenencia -->
                     <label class="inline-flex items-center space-x-2 text-xs text-gray-300 bg-gray-950 hover:bg-gray-900 px-3 py-1.5 rounded-lg border border-gray-800 cursor-pointer select-none transition-all">
@@ -328,77 +319,28 @@
 
         // Definición de las 10 empresas del plan previsional con sus metadatos y valores iniciales de mercado
         const activosConfig = {
-            AMZN: {
-                nombre: "Amazon Inc.",
-                precioMercadoARS: 2950,
-                color: "#f99f1b"
-            },
-            WMT: {
-                nombre: "Walmart Inc.",
-                precioMercadoARS: 3850,
-                color: "#ffc220"
-            },
-            GOOGL: {
-                nombre: "Alphabet (Google)",
-                precioMercadoARS: 9800,
-                color: "#4285f4"
-            },
-            VIST: {
-                nombre: "Vista Energy",
-                precioMercadoARS: 36700,
-                color: "#10b981"
-            },
-            KO: {
-                nombre: "Coca-Cola Co.",
-                precioMercadoARS: 23510,
-                color: "#f40009"
-            },
-            MO: {
-                nombre: "Altria Group",
-                precioMercadoARS: 25840,
-                color: "#7c3aed"
-            },
-            O: {
-                nombre: "Realty Income",
-                precioMercadoARS: 5800,
-                color: "#ec4899"
-            },
-            SPY: {
-                nombre: "S&P 500 ETF",
-                precioMercadoARS: 18760,
-                color: "#ef4444"
-            },
-            RSP: {
-                nombre: "S&P 500 Equal Weight",
-                precioMercadoARS: 10350,
-                color: "#06b6d4"
-            },
-            VWO: {
-                nombre: "Emerging Markets ETF",
-                precioMercadoARS: 11950,
-                color: "#84cc16"
-            }
+            AMZN: { nombre: "Amazon Inc.", precioMercadoARS: 2950, color: "#f99f1b" },
+            WMT: { nombre: "Walmart Inc.", precioMercadoARS: 3850, color: "#ffc220" },
+            GOOGL: { nombre: "Alphabet (Google)", precioMercadoARS: 9800, color: "#4285f4" },
+            VIST: { nombre: "Vista Energy", precioMercadoARS: 36700, color: "#10b981" },
+            KO: { nombre: "Coca-Cola Co.", precioMercadoARS: 23510, color: "#f40009" },
+            MO: { nombre: "Altria Group", precioMercadoARS: 25840, color: "#7c3aed" },
+            O: { nombre: "Realty Income", precioMercadoARS: 5800, color: "#ec4899" },
+            SPY: { nombre: "S&P 500 ETF", precioMercadoARS: 18760, color: "#ef4444" },
+            RSP: { nombre: "S&P 500 Equal Weight", precioMercadoARS: 10350, color: "#06b6d4" },
+            VWO: { nombre: "Emerging Markets ETF", precioMercadoARS: 11950, color: "#84cc16" }
         };
 
         // Base inicial del portafolio del usuario: 51 de Amazon y 51 de Walmart que ya posee
-        const comprasIniciales = [{
-            id: "init-amzn",
-            activo: "AMZN",
-            cantidad: 51,
-            precioARS: 2950,
-            fecha: "2025-06-01"
-        }, {
-            id: "init-wmt",
-            activo: "WMT",
-            cantidad: 51,
-            precioARS: 3850,
-            fecha: "2025-06-01"
-        }];
+        const comprasIniciales = [
+            { id: "init-amzn", activo: "AMZN", cantidad: 51, precioARS: 2950, fecha: "2025-06-01" },
+            { id: "init-wmt", activo: "WMT", cantidad: 51, precioARS: 3850, fecha: "2025-06-01" }
+        ];
 
         // Estado de la aplicación
         let transacciones = [];
-        let preciosMercadoCustom = {};
-        let monedaActiva = 'ARS';
+        let preciosMercadoCustom = {}; 
+        let monedaActiva = 'ARS'; 
         let chartInstance = null;
         let mostrarSoloTenencias = false; // Estado del toggle de filtro
 
@@ -406,21 +348,33 @@
         function inicializarDatos() {
             const transaccionesGuardadas = localStorage.getItem('mi_retiro_transacciones_2036');
             if (transaccionesGuardadas) {
-                transacciones = JSON.parse(transaccionesGuardadas);
+                try {
+                    transacciones = JSON.parse(transaccionesGuardadas);
+                } catch(e) {
+                    transacciones = [...comprasIniciales];
+                }
             } else {
                 transacciones = [...comprasIniciales];
                 localStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
             }
 
+            // Sanitizar o construir la lista de precios personalizados de mercado
             const preciosGuardados = localStorage.getItem('mi_retiro_precios_custom');
             if (preciosGuardados) {
-                preciosMercadoCustom = JSON.parse(preciosGuardados);
-            } else {
-                Object.keys(activosConfig).forEach(ticker => {
-                    preciosMercadoCustom[ticker] = activosConfig[ticker].precioMercadoARS;
-                });
-                localStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
+                try {
+                    preciosMercadoCustom = JSON.parse(preciosGuardados);
+                } catch(e) {
+                    preciosMercadoCustom = {};
+                }
             }
+
+            // Asegurarse de que todos los tickers existentes en la app tengan un precio definido para evitar caídas de rendering
+            Object.keys(activosConfig).forEach(ticker => {
+                if (preciosMercadoCustom[ticker] === undefined || preciosMercadoCustom[ticker] === null || isNaN(parseFloat(preciosMercadoCustom[ticker]))) {
+                    preciosMercadoCustom[ticker] = activosConfig[ticker].precioMercadoARS;
+                }
+            });
+            localStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
 
             // Recuperar hora de última actualización
             const savedTime = localStorage.getItem('mi_retiro_last_update_time');
@@ -447,9 +401,10 @@
         // Sistema propio de notificaciones Toast
         function mostrarToast(mensaje, tipo = "info") {
             const container = document.getElementById('toast-container');
+            if (!container) return;
             const toast = document.createElement('div');
             toast.className = `p-4 rounded-xl shadow-xl border text-sm font-medium transition-all duration-300 transform translate-y-5 opacity-0 pointer-events-auto flex items-center space-x-3 max-w-sm `;
-
+            
             if (tipo === "success") {
                 toast.className += "bg-emerald-950/90 border-emerald-500/30 text-emerald-300";
                 toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i><span>${mensaje}</span>`;
@@ -462,7 +417,7 @@
             }
 
             container.appendChild(toast);
-
+            
             // Forzar reflow para animación
             setTimeout(() => {
                 toast.classList.remove('translate-y-5', 'opacity-0');
@@ -485,16 +440,9 @@
         function formatMoneda(valor, moneda) {
             const m = moneda || monedaActiva;
             if (m === 'USD') {
-                return new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD'
-                }).format(valor);
+                return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(valor);
             } else {
-                return new Intl.NumberFormat('es-AR', {
-                    style: 'currency',
-                    currency: 'ARS',
-                    minimumFractionDigits: 2
-                }).format(valor);
+                return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2 }).format(valor);
             }
         }
 
@@ -525,7 +473,7 @@
                 const dolarCCL = getDolarCCL();
                 // Si el usuario ingresó el precio en dólares, lo guardamos convertido a pesos
                 const precioARS = monedaActiva === 'USD' ? (valor * dolarCCL) : valor;
-
+                
                 preciosMercadoCustom[ticker] = Math.round(precioARS * 100) / 100;
                 localStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
                 recalcularPortafolio();
@@ -563,33 +511,52 @@
             mostrarToast("Registro eliminado con éxito.", "success");
         }
 
-        // Procesar formulario de nueva compra
+        // Procesar formulario de nueva compra de forma robusta e interactiva
         document.getElementById('form-compra').addEventListener('submit', function(e) {
             e.preventDefault();
-
+            
             const activo = document.getElementById('compra-activo').value;
-            const cantidad = parseInt(document.getElementById('compra-cantidad').value);
-            const precioARS = parseFloat(document.getElementById('compra-precio').value);
+            const cantidadVal = document.getElementById('compra-cantidad').value;
+            const precioVal = document.getElementById('compra-precio').value;
             const fecha = document.getElementById('compra-fecha').value;
 
-            if (activo && cantidad > 0 && precioARS >= 0 && fecha) {
-                const nuevaTransaccion = {
-                    id: 'tx-' + Date.now(),
-                    activo,
-                    cantidad,
-                    precioARS,
-                    fecha
-                };
+            // Validaciones detalladas para evitar fallos silenciosos
+            const cantidad = parseInt(cantidadVal);
+            const precioARS = parseFloat(precioVal);
 
-                transacciones.push(nuevaTransaccion);
-                localStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
-
-                document.getElementById('compra-cantidad').value = '';
-                document.getElementById('compra-precio').value = '';
-
-                recalcularPortafolio();
-                mostrarToast(`Agregados ${cantidad} nominales de ${activo} a la cartera.`, "success");
+            if (!activo) {
+                mostrarToast("Por favor, selecciona un activo de la lista.", "error");
+                return;
             }
+            if (isNaN(cantidad) || cantidad <= 0) {
+                mostrarToast("Cantidad inválida. Ingresa un número mayor a cero.", "error");
+                return;
+            }
+            if (isNaN(precioARS) || precioARS < 0) {
+                mostrarToast("Precio unitario inválido. Verifica los números cargados.", "error");
+                return;
+            }
+            if (!fecha) {
+                mostrarToast("Por favor, ingresa una fecha válida para el registro.", "error");
+                return;
+            }
+
+            const nuevaTransaccion = {
+                id: 'tx-' + Date.now(),
+                activo,
+                cantidad,
+                precioARS,
+                fecha
+            };
+
+            transacciones.push(nuevaTransaccion);
+            localStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
+            
+            document.getElementById('compra-cantidad').value = '';
+            document.getElementById('compra-precio').value = '';
+            
+            recalcularPortafolio();
+            mostrarToast(`¡Guardado! Se sumaron ${cantidad} nominales de ${activo} a la tabla.`, "success");
         });
 
         // ==========================================
@@ -613,68 +580,25 @@
             const systemPrompt = "Eres un analista financiero experto en el mercado de valores argentino (BYMA). Tu trabajo es buscar y retornar las cotizaciones reales vigentes más actualizadas posibles para los CEDEARs solicitados y el Dólar CCL actual en la fecha actual (fines de mayo o principios de junio de 2026). Debes responder exclusivamente con un objeto JSON válido que mapee cada ticker de CEDEAR a su valor numérico en pesos ARS, incluyendo el campo 'ccl'.";
 
             const payload = {
-                contents: [{
-                    parts: [{
-                        text: queryPrompt
-                    }]
-                }],
-                systemInstruction: {
-                    parts: [{
-                        text: systemPrompt
-                    }]
-                },
-                tools: [{
-                    "google_search": {}
-                }],
+                contents: [{ parts: [{ text: queryPrompt }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                tools: [{ "google_search": {} }],
                 generationConfig: {
                     responseMimeType: "application/json",
                     responseSchema: {
                         type: "OBJECT",
                         properties: {
-                            AMZN: {
-                                type: "NUMBER",
-                                description: "Precio del CEDEAR de Amazon en pesos"
-                            },
-                            WMT: {
-                                type: "NUMBER",
-                                description: "Precio del CEDEAR de Walmart en pesos"
-                            },
-                            GOOGL: {
-                                type: "NUMBER",
-                                description: "Precio del CEDEAR de Google en pesos"
-                            },
-                            VIST: {
-                                type: "NUMBER",
-                                description: "Precio del CEDEAR de Vista en pesos"
-                            },
-                            KO: {
-                                type: "NUMBER",
-                                description: "Precio del CEDEAR de Coca-Cola en pesos"
-                            },
-                            MO: {
-                                type: "NUMBER",
-                                description: "Precio del CEDEAR de Altria en pesos"
-                            },
-                            O: {
-                                type: "NUMBER",
-                                description: "Precio del CEDEAR de Realty Income en pesos"
-                            },
-                            SPY: {
-                                type: "NUMBER",
-                                description: "Precio del CEDEAR del SPY en pesos"
-                            },
-                            RSP: {
-                                type: "NUMBER",
-                                description: "Precio del CEDEAR del RSP en pesos"
-                            },
-                            VWO: {
-                                type: "NUMBER",
-                                description: "Precio del CEDEAR del VWO en pesos"
-                            },
-                            ccl: {
-                                type: "NUMBER",
-                                description: "Valor de cotización actual del Dolar CCL en pesos"
-                            }
+                            AMZN: { type: "NUMBER", description: "Precio del CEDEAR de Amazon en pesos" },
+                            WMT: { type: "NUMBER", description: "Precio del CEDEAR de Walmart en pesos" },
+                            GOOGL: { type: "NUMBER", description: "Precio del CEDEAR de Google en pesos" },
+                            VIST: { type: "NUMBER", description: "Precio del CEDEAR de Vista en pesos" },
+                            KO: { type: "NUMBER", description: "Precio del CEDEAR de Coca-Cola en pesos" },
+                            MO: { type: "NUMBER", description: "Precio del CEDEAR de Altria en pesos" },
+                            O: { type: "NUMBER", description: "Precio del CEDEAR de Realty Income en pesos" },
+                            SPY: { type: "NUMBER", description: "Precio del CEDEAR del SPY en pesos" },
+                            RSP: { type: "NUMBER", description: "Precio del CEDEAR del RSP en pesos" },
+                            VWO: { type: "NUMBER", description: "Precio del CEDEAR del VWO en pesos" },
+                            ccl: { type: "NUMBER", description: "Valor de cotización actual del Dolar CCL en pesos" }
                         },
                         required: ["AMZN", "WMT", "GOOGL", "VIST", "KO", "MO", "O", "SPY", "RSP", "VWO", "ccl"]
                     }
@@ -703,13 +627,11 @@
             try {
                 const result = await fetchWithRetry(url, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
-                const jsonText = result.candidates ? .[0] ? .content ? .parts ? .[0] ? .text;
+                const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!jsonText) {
                     throw new Error("No se recibieron datos de cotización en la respuesta estructurada.");
                 }
@@ -730,13 +652,10 @@
 
                 // Guardar en almacenamiento persistente
                 localStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
-
+                
                 // Guardar timestamp de actualización
                 const now = new Date();
-                const timeString = "En vivo: " + now.toLocaleDateString() + " " + now.toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
+                const timeString = "En vivo: " + now.toLocaleDateString() + " " + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 document.getElementById('last-update-time').innerText = timeString;
                 localStorage.setItem('mi_retiro_last_update_time', timeString);
 
@@ -757,16 +676,20 @@
         // Motor de Cálculo Principal
         function recalcularPortafolio() {
             const dolarCCL = getDolarCCL();
-
+            
             const consolidado = {};
             Object.keys(activosConfig).forEach(ticker => {
+                let precioMercadoBase = parseFloat(preciosMercadoCustom[ticker]);
+                if (isNaN(precioMercadoBase)) {
+                    precioMercadoBase = activosConfig[ticker].precioMercadoARS;
+                }
                 consolidado[ticker] = {
                     ticker: ticker,
                     nombre: activosConfig[ticker].nombre,
                     nominales: 0,
                     inversionTotalARS: 0,
                     precioPromedioARS: 0,
-                    precioMercadoARS: preciosMercadoCustom[ticker] || activosConfig[ticker].precioMercadoARS
+                    precioMercadoARS: precioMercadoBase
                 };
             });
 
@@ -820,7 +743,7 @@
             if (monedaActiva === 'USD') {
                 elemInvertido.innerText = formatMoneda(totalInvertidoARS / dolarCCL, 'USD');
                 elemValorActual.innerText = formatMoneda(totalActualARS / dolarCCL, 'USD');
-
+                
                 if (pnlARS >= 0) {
                     elemPnL.innerText = `+ ${formatMoneda(pnlARS / dolarCCL, 'USD')}`;
                     elemPnL.className = "text-2xl font-bold mt-1 text-emerald-400";
@@ -860,33 +783,34 @@
         // Renderizar Tablas
         function renderizarTablas(consolidado, dolarCCL) {
             const tbodyPortafolio = document.getElementById('portfolio-rows');
+            if (!tbodyPortafolio) return;
             tbodyPortafolio.innerHTML = '';
 
             let hayPosiciones = false;
 
             Object.keys(consolidado).forEach(ticker => {
-                        const item = consolidado[ticker];
+                const item = consolidado[ticker];
+                
+                // Si el filtro está activo, omitimos activos sin saldo cargado
+                if (mostrarSoloTenencias && item.nominales <= 0) return;
+                
+                hayPosiciones = true;
 
-                        // Si el filtro está activo, omitimos activos sin saldo cargado
-                        if (mostrarSoloTenencias && item.nominales <= 0) return;
+                const inversionTotal = monedaActiva === 'USD' ? (item.inversionTotalARS / dolarCCL) : item.inversionTotalARS;
+                const precioPromedio = item.nominales > 0 ? (monedaActiva === 'USD' ? (item.precioPromedioARS / dolarCCL) : item.precioPromedioARS) : 0;
+                
+                // Mostrar siempre el precio de mercado adaptado a la moneda de visualización actual
+                const precioMercado = monedaActiva === 'USD' ? (item.precioMercadoARS / dolarCCL) : item.precioMercadoARS;
+                const valorActual = item.nominales * precioMercado;
 
-                        hayPosiciones = true;
+                const rtaARS = item.nominales > 0 ? ((item.nominales * item.precioMercadoARS) - item.inversionTotalARS) : 0;
+                const rtaValor = monedaActiva === 'USD' ? (rtaARS / dolarCCL) : rtaARS;
+                const rtaPorcentaje = item.inversionTotalARS > 0 ? (rtaARS / item.inversionTotalARS) * 100 : 0;
 
-                        const inversionTotal = monedaActiva === 'USD' ? (item.inversionTotalARS / dolarCCL) : item.inversionTotalARS;
-                        const precioPromedio = item.nominales > 0 ? (monedaActiva === 'USD' ? (item.precioPromedioARS / dolarCCL) : item.precioPromedioARS) : 0;
-
-                        // Mostrar siempre el precio de mercado adaptado a la moneda de visualización actual
-                        const precioMercado = monedaActiva === 'USD' ? (item.precioMercadoARS / dolarCCL) : item.precioMercadoARS;
-                        const valorActual = item.nominales * precioMercado;
-
-                        const rtaARS = item.nominales > 0 ? ((item.nominales * item.precioMercadoARS) - item.inversionTotalARS) : 0;
-                        const rtaValor = monedaActiva === 'USD' ? (rtaARS / dolarCCL) : rtaARS;
-                        const rtaPorcentaje = item.inversionTotalARS > 0 ? (rtaARS / item.inversionTotalARS) * 100 : 0;
-
-                        const row = document.createElement('tr');
-                        row.className = "hover:bg-gray-800/20 transition-all border-b border-gray-800/40";
-
-                        row.innerHTML = `
+                const row = document.createElement('tr');
+                row.className = "hover:bg-gray-800/20 transition-all border-b border-gray-800/40";
+                
+                row.innerHTML = `
                     <td class="py-4 px-4 font-medium text-white flex items-center space-x-2.5">
                         <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${activosConfig[ticker].color}"></span>
                         <div>
@@ -939,6 +863,7 @@
 
             // Historial de Transacciones individuales
             const tbodyTransacciones = document.getElementById('transaction-rows');
+            if (!tbodyTransacciones) return;
             tbodyTransacciones.innerHTML = '';
 
             const txOrdenadas = [...transacciones].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
@@ -976,7 +901,7 @@
             }
         }
 
-        // Renderizar / Actualizar el Gráfico
+        // Renderizar / Actualizar el Gráfico (Protección de error si no carga Chart.js)
         function actualizarGrafico(consolidado, dolarCCL) {
             let totalInvertido = 0;
             let totalActual = 0;
@@ -1003,13 +928,20 @@
                 subPatrimonio.className = "text-base font-bold text-red-400 mt-1";
             }
 
-            const ctx = document.getElementById('performance-chart').getContext('2d');
+            // Guardabarros: Verificar que la librería de gráficos esté online
+            if (typeof Chart === 'undefined') {
+                console.warn("Chart.js no está cargado. Las tablas y base de datos continúan trabajando con normalidad.");
+                return;
+            }
+
+            const ctx = document.getElementById('performance-chart');
+            if (!ctx) return;
 
             if (chartInstance) {
                 chartInstance.destroy();
             }
 
-            chartInstance = new Chart(ctx, {
+            chartInstance = new Chart(ctx.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: ['Dinero Puesto (Capital)', 'Valor Actual de Mercado'],
@@ -1063,12 +995,11 @@
             });
         }
 
-        // Inicializar la aplicación
+        // Inicializar la aplicación de forma secuencial y segura
         window.onload = function() {
             inicializarDatos();
             recalcularPortafolio();
         };
     </script>
 </body>
-
 </html>
