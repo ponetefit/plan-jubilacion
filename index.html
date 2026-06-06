@@ -35,7 +35,7 @@
                 </div>
             </div>
             <p class="text-sm text-gray-300 mb-5 leading-relaxed">
-                Son las <strong class="text-yellow-400" id="modal-hora">17:05</strong> hs. El mercado argentino cerró. ¿Querés actualizar los precios de tus CEDEARs con cotizaciones de cierre?
+                Son las <strong class="text-yellow-400" id="modal-hora">18:00</strong> hs. El mercado argentino cerró. ¿Querés actualizar los precios de tus CEDEARs con cotizaciones de cierre?
             </p>
             <div class="flex space-x-3">
                 <button onclick="confirmarAutoUpdate(true)" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-lg text-sm transition-all flex items-center justify-center space-x-2">
@@ -66,7 +66,7 @@
                     <i id="countdown-icon" class="fa-solid fa-clock text-yellow-400 text-[10px]"></i>
                     <span id="countdown-badge" class="text-[10px] font-mono text-yellow-400">Calculando...</span>
                 </div>
-                <span id="last-update-time" class="text-[10px] text-gray-400 font-mono bg-gray-900/80 px-2.5 py-1 rounded-md border border-gray-800">Precios: Referencia Mayo 2026</span>
+                <span id="last-update-time" class="text-[10px] text-gray-400 font-mono bg-gray-900/80 px-2.5 py-1 rounded-md border border-gray-800">Precios: Cierre Vie 06/06/2025</span>
                 <button onclick="actualizarPreciosConIA()" id="btn-update-ia" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-2 px-4 rounded-lg text-xs transition-all shadow-lg shadow-indigo-950/30 flex items-center space-x-2">
                     <i id="ia-icon" class="fa-solid fa-wand-magic-sparkles animate-pulse"></i>
                     <span id="ia-text">Actualizar Cotizaciones (IA)</span>
@@ -223,9 +223,9 @@
                         <div class="flex items-center justify-between">
                             <span class="text-[11px] text-gray-400">Horario de cierre BYMA</span>
                             <div class="flex items-center space-x-1">
-                                <input id="cierre-hora" type="number" min="0" max="23" value="17" class="w-10 text-center bg-gray-900 border border-gray-700 rounded px-1 py-0.5 text-xs text-white focus:outline-none focus:border-yellow-500">
+                                <input id="cierre-hora" type="number" min="0" max="23" value="18" class="w-10 text-center bg-gray-900 border border-gray-700 rounded px-1 py-0.5 text-xs text-white focus:outline-none focus:border-yellow-500">
                                 <span class="text-gray-500 text-xs">:</span>
-                                <input id="cierre-minuto" type="number" min="0" max="59" value="5" class="w-10 text-center bg-gray-900 border border-gray-700 rounded px-1 py-0.5 text-xs text-white focus:outline-none focus:border-yellow-500">
+                                <input id="cierre-minuto" type="number" min="0" max="59" value="0" class="w-10 text-center bg-gray-900 border border-gray-700 rounded px-1 py-0.5 text-xs text-white focus:outline-none focus:border-yellow-500">
                                 <button onclick="reprogramarCierre()" class="ml-1 p-1 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-all" title="Guardar horario">
                                     <i class="fa-solid fa-check text-[10px] text-emerald-400"></i>
                                 </button>
@@ -334,7 +334,7 @@
     <footer class="border-t border-gray-900 bg-gray-950 py-6 mt-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-gray-500">
             <p>Estrategia Financiera Personal para Mayo de 2036. Cotizaciones actualizadas mediante Claude AI con Web Search.</p>
-            <p class="mt-1 text-gray-600">Auto-update al cierre de BYMA activado · Los precios se actualizan automáticamente de lunes a viernes a las 17:05 hs (hora Argentina).</p>
+            <p class="mt-1 text-gray-600">Auto-update al cierre de BYMA activado · Los precios se actualizan automáticamente de lunes a viernes a las 18:00 hs (hora Argentina).</p>
         </div>
     </footer>
 
@@ -494,7 +494,7 @@
             Object.keys(activosConfig).forEach(t => { preciosMercadoCustom[t] = activosConfig[t].precioMercadoARS; });
             safeStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
             safeStorage.removeItem('mi_retiro_last_update_time');
-            document.getElementById('last-update-time').innerText = "Precios: Referencia Mayo 2026";
+            document.getElementById('last-update-time').innerText = "Precios: Cierre Vie 06/06/2025";
             recalcularPortafolio();
             mostrarToast("Precios restablecidos a valores de referencia.", "info");
         }
@@ -626,8 +626,8 @@ Todos los valores deben ser números (precio en ARS). Si no encontrás el precio
         // ─── AUTO-UPDATE AL CIERRE DE MERCADO ───────────────────────────────────────
 
         function getHoraCierre() {
-            const h = parseInt(document.getElementById('cierre-hora').value)   || 17;
-            const m = parseInt(document.getElementById('cierre-minuto').value) || 5;
+            const h = parseInt(document.getElementById('cierre-hora').value)   || 18;
+            const m = parseInt(document.getElementById('cierre-minuto').value) || 0;
             return { hora: Math.min(23, Math.max(0, h)), minuto: Math.min(59, Math.max(0, m)) };
         }
 
