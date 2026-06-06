@@ -317,6 +317,32 @@
         // Configuración de clave de API vacía (la inyecta el entorno)
         const apiKey = "";
 
+        // Envoltorio seguro para evitar caídas catastróficas de iframe por restricción de localStorage
+        const safeStorage = {
+            _backup: {},
+            getItem(key) {
+                try {
+                    return localStorage.getItem(key);
+                } catch (e) {
+                    return this._backup[key] || null;
+                }
+            },
+            setItem(key, value) {
+                try {
+                    localStorage.setItem(key, value);
+                } catch (e) {
+                    this._backup[key] = value;
+                }
+            },
+            removeItem(key) {
+                try {
+                    localStorage.removeItem(key);
+                } catch (e) {
+                    delete this._backup[key];
+                }
+            }
+        };
+
         // Definición de las 10 empresas del plan previsional con sus metadatos y valores iniciales de mercado
         const activosConfig = {
             AMZN: { nombre: "Amazon Inc.", precioMercadoARS: 2950, color: "#f99f1b" },
@@ -344,25 +370,31 @@
         let chartInstance = null;
         let mostrarSoloTenencias = false; // Estado del toggle de filtro
 
-        // Inicializar Datos desde localStorage o usar base por defecto
+        // Inicializar Datos desde safeStorage o usar base por defecto
         function inicializarDatos() {
-            const transaccionesGuardadas = localStorage.getItem('mi_retiro_transacciones_2036');
+            const transaccionesGuardadas = safeStorage.getItem('mi_retiro_transacciones_2036');
             if (transaccionesGuardadas) {
                 try {
                     transacciones = JSON.parse(transaccionesGuardadas);
+                    if (!Array.isArray(transacciones)) {
+                        transacciones = [...comprasIniciales];
+                    }
                 } catch(e) {
                     transacciones = [...comprasIniciales];
                 }
             } else {
                 transacciones = [...comprasIniciales];
-                localStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
+                safeStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
             }
 
             // Sanitizar o construir la lista de precios personalizados de mercado
-            const preciosGuardados = localStorage.getItem('mi_retiro_precios_custom');
+            const preciosGuardados = safeStorage.getItem('mi_retiro_precios_custom');
             if (preciosGuardados) {
                 try {
                     preciosMercadoCustom = JSON.parse(preciosGuardados);
+                    if (typeof preciosMercadoCustom !== 'object' || preciosMercadoCustom === null) {
+                        preciosMercadoCustom = {};
+                    }
                 } catch(e) {
                     preciosMercadoCustom = {};
                 }
@@ -374,10 +406,10 @@
                     preciosMercadoCustom[ticker] = activosConfig[ticker].precioMercadoARS;
                 }
             });
-            localStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
+            safeStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
 
             // Recuperar hora de última actualización
-            const savedTime = localStorage.getItem('mi_retiro_last_update_time');
+            const savedTime = safeStorage.getItem('mi_retiro_last_update_time');
             if (savedTime) {
                 document.getElementById('last-update-time').innerText = savedTime;
             }
@@ -475,7 +507,7 @@
                 const precioARS = monedaActiva === 'USD' ? (valor * dolarCCL) : valor;
                 
                 preciosMercadoCustom[ticker] = Math.round(precioARS * 100) / 100;
-                localStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
+                safeStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
                 recalcularPortafolio();
             }
         }
@@ -485,8 +517,8 @@
             Object.keys(activosConfig).forEach(ticker => {
                 preciosMercadoCustom[ticker] = activosConfig[ticker].precioMarketARS || activosConfig[ticker].precioMercadoARS;
             });
-            localStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
-            localStorage.removeItem('mi_retiro_last_update_time');
+            safeStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
+            safeStorage.removeItem('mi_retiro_last_update_time');
             document.getElementById('last-update-time').innerText = "Precios: Referencia Mayo 2026";
             recalcularPortafolio();
             mostrarToast("Precios de mercado restablecidos a valores por defecto.", "info");
@@ -497,7 +529,7 @@
             const confirmed = confirm("¿Estás seguro de que querés borrar todas tus transacciones? Esto restablecerá tu cartera a las 51 unidades base de Amazon y Walmart.");
             if (confirmed) {
                 transacciones = [...comprasIniciales];
-                localStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
+                safeStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
                 recalcularPortafolio();
                 mostrarToast("Historial de compras limpiado.", "info");
             }
@@ -506,57 +538,67 @@
         // Eliminar una transacción individual
         function eliminarTransaccion(id) {
             transacciones = transacciones.filter(t => t.id !== id);
-            localStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
+            safeStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
             recalcularPortafolio();
             mostrarToast("Registro eliminado con éxito.", "success");
         }
 
-        // Procesar formulario de nueva compra de forma robusta e interactiva
+        // Procesar formulario de nueva compra de forma robusta e interactiva con prevención de recargas fatales
         document.getElementById('form-compra').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const activo = document.getElementById('compra-activo').value;
-            const cantidadVal = document.getElementById('compra-cantidad').value;
-            const precioVal = document.getElementById('compra-precio').value;
-            const fecha = document.getElementById('compra-fecha').value;
+            try {
+                const activo = document.getElementById('compra-activo').value;
+                const cantidadVal = document.getElementById('compra-cantidad').value;
+                const precioVal = document.getElementById('compra-precio').value;
+                const fecha = document.getElementById('compra-fecha').value;
 
-            // Validaciones detalladas para evitar fallos silenciosos
-            const cantidad = parseInt(cantidadVal);
-            const precioARS = parseFloat(precioVal);
+                // Validaciones detalladas para evitar fallos silenciosos
+                const cantidad = parseInt(cantidadVal);
+                const precioARS = parseFloat(precioVal);
 
-            if (!activo) {
-                mostrarToast("Por favor, selecciona un activo de la lista.", "error");
-                return;
-            }
-            if (isNaN(cantidad) || cantidad <= 0) {
-                mostrarToast("Cantidad inválida. Ingresa un número mayor a cero.", "error");
-                return;
-            }
-            if (isNaN(precioARS) || precioARS < 0) {
-                mostrarToast("Precio unitario inválido. Verifica los números cargados.", "error");
-                return;
-            }
-            if (!fecha) {
-                mostrarToast("Por favor, ingresa una fecha válida para el registro.", "error");
-                return;
-            }
+                if (!activo) {
+                    mostrarToast("Por favor, selecciona un activo de la lista.", "error");
+                    return;
+                }
+                if (isNaN(cantidad) || cantidad <= 0) {
+                    mostrarToast("Cantidad inválida. Ingresa un número mayor a cero.", "error");
+                    return;
+                }
+                if (isNaN(precioARS) || precioARS < 0) {
+                    mostrarToast("Precio unitario inválido. Verifica los números cargados.", "error");
+                    return;
+                }
+                if (!fecha) {
+                    mostrarToast("Por favor, ingresa una fecha válida para el registro.", "error");
+                    return;
+                }
 
-            const nuevaTransaccion = {
-                id: 'tx-' + Date.now(),
-                activo,
-                cantidad,
-                precioARS,
-                fecha
-            };
+                const nuevaTransaccion = {
+                    id: 'tx-' + Date.now(),
+                    activo,
+                    cantidad,
+                    precioARS,
+                    fecha
+                };
 
-            transacciones.push(nuevaTransaccion);
-            localStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
-            
-            document.getElementById('compra-cantidad').value = '';
-            document.getElementById('compra-precio').value = '';
-            
-            recalcularPortafolio();
-            mostrarToast(`¡Guardado! Se sumaron ${cantidad} nominales de ${activo} a la tabla.`, "success");
+                // Asegurar tipo Array por si hubo corrupciones en memoria
+                if (!Array.isArray(transacciones)) {
+                    transacciones = [...comprasIniciales];
+                }
+
+                transacciones.push(nuevaTransaccion);
+                safeStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
+                
+                document.getElementById('compra-cantidad').value = '';
+                document.getElementById('compra-precio').value = '';
+                
+                recalcularPortafolio();
+                mostrarToast(`¡Guardado! Se sumaron ${cantidad} nominales de ${activo} a la tabla.`, "success");
+            } catch (err) {
+                console.error("Fallo durante el registro:", err);
+                mostrarToast("Error crítico al procesar la compra: " + err.message, "error");
+            }
         });
 
         // ==========================================
@@ -650,14 +692,14 @@
                     document.getElementById('ccl-input').value = data.ccl.toFixed(2);
                 }
 
-                // Guardar en almacenamiento persistente
-                localStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
+                // Guardar en almacenamiento seguro
+                safeStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
                 
                 // Guardar timestamp de actualización
                 const now = new Date();
                 const timeString = "En vivo: " + now.toLocaleDateString() + " " + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 document.getElementById('last-update-time').innerText = timeString;
-                localStorage.setItem('mi_retiro_last_update_time', timeString);
+                safeStorage.setItem('mi_retiro_last_update_time', timeString);
 
                 recalcularPortafolio();
                 mostrarToast("¡Planilla y CCL actualizados con éxito por IA (Google Search)!", "success");
@@ -694,12 +736,14 @@
             });
 
             // Procesar todas las transacciones cargadas
-            transacciones.forEach(tx => {
-                if (consolidado[tx.activo]) {
-                    consolidado[tx.activo].nominales += tx.cantidad;
-                    consolidado[tx.activo].inversionTotalARS += (tx.cantidad * tx.precioARS);
-                }
-            });
+            if (Array.isArray(transacciones)) {
+                transacciones.forEach(tx => {
+                    if (consolidado[tx.activo]) {
+                        consolidado[tx.activo].nominales += tx.cantidad;
+                        consolidado[tx.activo].inversionTotalARS += (tx.cantidad * tx.precioARS);
+                    }
+                });
+            }
 
             // Calcular precios promedios ponderados
             Object.keys(consolidado).forEach(ticker => {
