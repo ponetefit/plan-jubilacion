@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Retiro 2036 - Gestor de CEDEARs con IA</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para el gráfico de rendimiento -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
+
+    <!-- Notificaciones flotantes personalizadas -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3 pointer-events-none"></div>
+
+    <!-- Header / Barra de navegación -->
+    <header class="border-b border-gray-800 bg-gray-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-600 p-2 rounded-lg text-white">
+                    <i class="fa-solid fa-chart-line text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-white tracking-tight">Mi Retiro 2036</h1>
+                    <p class="text-xs text-gray-400">Plan de Inversión Semanal con Actualización por IA</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <!-- Indicador de Última Actualización -->
+                <div class="flex flex-col items-end mr-1 text-right">
+                    <span id="last-update-time" class="text-[10px] text-gray-400 font-mono bg-gray-900/80 px-2.5 py-1 rounded-md border border-gray-800">Precios: Referencia Mayo 2026</span>
+                </div>
+                <!-- Botón de actualización inteligente -->
+                <button onclick="actualizarPreciosConIA()" id="btn-update-ia" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-2 px-4 rounded-lg text-xs transition-all shadow-lg shadow-indigo-950/30 flex items-center space-x-2">
+                    <i id="ia-icon" class="fa-solid fa-wand-magic-sparkles animate-pulse"></i>
+                    <span id="ia-text">Actualizar Cotizaciones (IA)</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenedor Principal -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Panel de Control Superior (Resumen de Métricas & Cotizador CCL) -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+
+            <!-- Tarjeta Dólar CCL (Tu Control Lateral del Tipo de Cambio) -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col justify-between shadow-xl">
+                <div>
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Conversor de Moneda</span>
+                        <span class="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg text-sm"><i class="fa-solid fa-dollar-sign"></i></span>
+                    </div>
+                    <h3 class="text-sm font-medium text-gray-400">Dólar CCL Referencia</h3>
+                    <div class="mt-2 flex items-center space-x-2">
+                        <span class="text-gray-500 font-bold text-xl">$</span>
+                        <input id="ccl-input" type="number" value="1480.70" step="0.1" class="w-full bg-gray-950 border border-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg py-1.5 px-3 text-white text-lg font-bold focus:outline-none transition-all"
+                            placeholder="Ej: 1480.70">
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-1.5">Al cambiar este valor, todo tu portafolio se recalcula al instante en USD.</p>
+                </div>
+                <div class="mt-5 pt-4 border-t border-gray-800/60 flex space-x-2">
+                    <button onclick="setMoneda('ARS')" id="btn-moneda-ars" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-emerald-600 text-white shadow-lg shadow-emerald-900/20">
+                        Pesos (ARS)
+                    </button>
+                    <button onclick="setMoneda('USD')" id="btn-moneda-usd" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-gray-800 text-gray-300 hover:bg-gray-700">
+                        Dólares (USD)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tarjeta Total Invertido (Costo de Compra) -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col justify-between shadow-xl">
+                <div>
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Capital de Bolsillo</span>
+                        <span class="p-1.5 bg-gray-800 text-gray-300 rounded-lg text-sm"><i class="fa-solid fa-piggy-bank"></i></span>
+                    </div>
+                    <h3 class="text-sm font-medium text-gray-400 mt-3">Total Invertido</h3>
+                    <div class="text-2xl font-bold mt-1 text-white" id="metric-total-invertido">
+                        $ 0,00
+                    </div>
+                </div>
+                <div class="text-xs text-gray-500 mt-4 pt-3 border-t border-gray-800/60 flex justify-between">
+                    <span>Base Inicial:</span>
+                    <span class="font-semibold text-gray-300">51 AMZN / 51 WMT</span>
+                </div>
+            </div>
+
+            <!-- Tarjeta Valor Actual de Cartera -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col justify-between shadow-xl">
+                <div>
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Valor de Mercado</span>
+                        <span class="p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg text-sm"><i class="fa-solid fa-wallet"></i></span>
+                    </div>
+                    <h3 class="text-sm font-medium text-gray-400 mt-3">Mi Patrimonio Actual</h3>
+                    <div class="text-2xl font-bold mt-1 text-white" id="metric-valor-actual">
+                        $ 0,00
+                    </div>
+                </div>
+                <div class="text-xs text-gray-500 mt-4 pt-3 border-t border-gray-800/60 flex justify-between" id="metric-porcentaje-cartera">
+                    <span>Participación de Activos:</span>
+                    <span class="font-semibold text-emerald-400" id="total-activos-count">0 CEDEARs</span>
+                </div>
+            </div>
+
+            <!-- Tarjeta Rendimiento General -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col justify-between shadow-xl">
+                <div>
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Rentabilidad</span>
+                        <span id="pnl-icon-bg" class="p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg text-sm"><i class="fa-solid fa-arrow-trend-up"></i></span>
+                    </div>
+                    <h3 class="text-sm font-medium text-gray-400 mt-3">Ganancia / Pérdida Total</h3>
+                    <div class="text-2xl font-bold mt-1" id="metric-pnl">
+                        $ 0,00
+                    </div>
+                </div>
+                <div class="text-xs mt-4 pt-3 border-t border-gray-800/60 flex justify-between" id="metric-pnl-percentage-container">
+                    <span>Porcentaje de Retorno:</span>
+                    <span class="font-bold" id="metric-pnl-percentage">0.00%</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Cuerpo de Carga e Historial de Gráficos -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+
+            <!-- Columna Izquierda: Formulario de Carga -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-xl flex flex-col justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-white mb-4 flex items-center">
+                        <i class="fa-solid fa-plus-circle text-emerald-500 mr-2"></i> Registrar Nueva Compra
+                    </h2>
+
+                    <form id="form-compra" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">Elegir Activo</label>
+                            <select id="compra-activo" class="w-full bg-gray-950 border border-gray-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg py-2 px-3 text-gray-200 text-sm focus:outline-none transition-all">
+                                <option value="AMZN">Amazon (AMZN)</option>
+                                <option value="WMT">Walmart (WMT)</option>
+                                <option value="GOOGL">Google (GOOGL)</option>
+                                <option value="VIST">Vista Energy (VIST)</option>
+                                <option value="KO">Coca-Cola (KO)</option>
+                                <option value="MO">Altria Group (MO)</option>
+                                <option value="O">Realty Income (O)</option>
+                                <option value="SPY">S&P 500 (SPY)</option>
+                                <option value="RSP">S&P Equal Weight (RSP)</option>
+                                <option value="VWO">Emerging Markets (VWO)</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1">Cantidad</label>
+                                <input id="compra-cantidad" type="number" min="1" step="1" required class="w-full bg-gray-950 border border-gray-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg py-2 px-3 text-white text-sm focus:outline-none transition-all"
+                                    placeholder="Ej: 5">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1">Precio Unitario ($ ARS)</label>
+                                <input id="compra-precio" type="number" min="0" step="0.01" required class="w-full bg-gray-950 border border-gray-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg py-2 px-3 text-white text-sm focus:outline-none transition-all"
+                                    placeholder="Ej: 23510">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">Fecha de Compra</label>
+                            <input id="compra-fecha" type="date" required class="w-full bg-gray-950 border border-gray-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg py-2 px-3 text-gray-300 text-sm focus:outline-none transition-all">
+                        </div>
+
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-lg text-sm transition-all shadow-lg shadow-emerald-900/30 flex items-center justify-center">
+                            <i class="fa-solid fa-plus mr-2"></i> Añadir a la Cartera
+                        </button>
+                    </form>
+                </div>
+
+                <div class="mt-6 pt-5 border-t border-gray-800/80">
+                    <div class="bg-gray-950 rounded-lg p-3.5 border border-gray-800/60">
+                        <h4 class="text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider"><i class="fa-solid fa-circle-info text-blue-400 mr-1"></i> Base Pre-Cargada</h4>
+                        <p class="text-[11px] text-gray-400 leading-relaxed">
+                            El sistema ya inicia con tus <strong class="text-white">51 CEDEARs de Amazon y Walmart</strong>. Podés pulsar el botón de <strong class="text-indigo-400">Actualizar Cotizaciones</strong> arriba a la derecha para actualizar
+                            todas las valuaciones en vivo.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha (2/3 de ancho): Gráfico Dinámico -->
+            <div class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-base font-bold text-white flex items-center">
+                            <i class="fa-solid fa-chart-pie text-blue-500 mr-2"></i> Relación Capital vs. Patrimonio
+                        </h2>
+                        <span class="text-xs text-gray-400" id="chart-currency-label">Valores en Pesos (ARS)</span>
+                    </div>
+                    <div class="relative w-full h-64 flex items-center justify-center">
+                        <canvas id="performance-chart"></canvas>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-800/60">
+                    <div class="text-center p-2.5 bg-gray-950/60 border border-gray-800/60 rounded-lg">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Tu Esfuerzo (Capital)</span>
+                        <div class="text-base font-bold text-gray-200 mt-1" id="chart-sub-capital">$ 0</div>
+                    </div>
+                    <div class="text-center p-2.5 bg-gray-950/60 border border-gray-800/60 rounded-lg">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Resultado de Mercado</span>
+                        <div class="text-base font-bold text-emerald-400 mt-1" id="chart-sub-patrimonio">$ 0</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Tabla de Portafolio Consolidado -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-xl mb-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center">
+                        <i class="fa-solid fa-table-list text-purple-500 mr-2"></i> Resumen de Posiciones
+                    </h2>
+                    <p class="text-xs text-gray-400 mt-0.5">Modificá los precios de mercado directamente en los inputs si querés simular variaciones (se guardan en tu moneda activa).</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Switch / Filtro para alternar visualización de tenencia -->
+                    <label class="inline-flex items-center space-x-2 text-xs text-gray-300 bg-gray-950 hover:bg-gray-900 px-3 py-1.5 rounded-lg border border-gray-800 cursor-pointer select-none transition-all">
+                        <input type="checkbox" id="toggle-tenencias" onchange="toggleFiltroTenencias(this.checked)" class="rounded bg-gray-950 border-gray-800 text-emerald-500 focus:ring-0 focus:ring-offset-0">
+                        <span>Solo tenencias activas</span>
+                    </label>
+
+                    <button onclick="resetearPreciosMercado()" class="py-1.5 px-3 border border-gray-800 hover:border-gray-700 bg-gray-950 hover:bg-gray-900 rounded-lg text-xs font-medium text-gray-300 transition-all">
+                        <i class="fa-solid fa-rotate-left mr-1.5"></i> Precios por Defecto
+                    </button>
+                    <button onclick="borrarHistorialCompras()" class="py-1.5 px-3 border border-red-900/30 hover:border-red-900/50 bg-red-950/30 hover:bg-red-950/50 text-red-400 rounded-lg text-xs font-medium transition-all">
+                        <i class="fa-solid fa-trash-can mr-1.5"></i> Limpiar Todo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabla Responsiva -->
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-gray-800 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                            <th class="py-3 px-4">Activo</th>
+                            <th class="py-3 px-4 text-center">Nominales</th>
+                            <th class="py-3 px-4 text-right">Precio Promedio</th>
+                            <th class="py-3 px-4 text-right">Inversión Total</th>
+                            <th class="py-3 px-4 text-right">Precio de Mercado</th>
+                            <th class="py-3 px-4 text-right">Valor de Mercado</th>
+                            <th class="py-3 px-4 text-right">Rendimiento (ARS / USD)</th>
+                            <th class="py-3 px-4 text-center">Porcentaje %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="portfolio-rows" class="divide-y divide-gray-800/50 text-sm text-gray-300">
+                        <!-- Las filas se renderizan dinámicamente con JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Historial de Transacciones (Operaciones individuales) -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-xl">
+            <h2 class="text-base font-bold text-white mb-4 flex items-center">
+                <i class="fa-solid fa-history text-yellow-500 mr-2"></i> Historial de Compras Realizadas
+            </h2>
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left text-xs text-gray-400">
+                    <thead>
+                        <tr class="border-b border-gray-800 font-semibold uppercase tracking-wider">
+                            <th class="py-2 px-4">Fecha</th>
+                            <th class="py-2 px-4">Activo</th>
+                            <th class="py-2 px-4 text-center">Cantidad</th>
+                            <th class="py-2 px-4 text-right">Precio de Compra</th>
+                            <th class="py-2 px-4 text-right">Total Transacción</th>
+                            <th class="py-2 px-4 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transaction-rows" class="divide-y divide-gray-800/30">
+                        <!-- Transacciones individuales se renderizan acá -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-900 bg-gray-950 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-gray-500">
+            <p>Estrategia Financiera Personal para Mayo de 2036. Datos de mercado actualizados mediante Gemini 2.5 Flash con Google Search Grounding.</p>
+        </div>
+    </footer>
+
+    <!-- Script de Funcionalidades y Control del Portafolio -->
+    <script>
+        // Configuración de clave de API vacía (la inyecta el entorno)
+        const apiKey = "";
+
+        // Definición de las 10 empresas del plan previsional con sus metadatos y valores iniciales de mercado
+        const activosConfig = {
+            AMZN: {
+                nombre: "Amazon Inc.",
+                precioMercadoARS: 2950,
+                color: "#f99f1b"
+            },
+            WMT: {
+                nombre: "Walmart Inc.",
+                precioMercadoARS: 3850,
+                color: "#ffc220"
+            },
+            GOOGL: {
+                nombre: "Alphabet (Google)",
+                precioMercadoARS: 9800,
+                color: "#4285f4"
+            },
+            VIST: {
+                nombre: "Vista Energy",
+                precioMercadoARS: 36700,
+                color: "#10b981"
+            },
+            KO: {
+                nombre: "Coca-Cola Co.",
+                precioMercadoARS: 23510,
+                color: "#f40009"
+            },
+            MO: {
+                nombre: "Altria Group",
+                precioMercadoARS: 25840,
+                color: "#7c3aed"
+            },
+            O: {
+                nombre: "Realty Income",
+                precioMercadoARS: 5800,
+                color: "#ec4899"
+            },
+            SPY: {
+                nombre: "S&P 500 ETF",
+                precioMercadoARS: 18760,
+                color: "#ef4444"
+            },
+            RSP: {
+                nombre: "S&P 500 Equal Weight",
+                precioMercadoARS: 10350,
+                color: "#06b6d4"
+            },
+            VWO: {
+                nombre: "Emerging Markets ETF",
+                precioMercadoARS: 11950,
+                color: "#84cc16"
+            }
+        };
+
+        // Base inicial del portafolio del usuario: 51 de Amazon y 51 de Walmart que ya posee
+        const comprasIniciales = [{
+            id: "init-amzn",
+            activo: "AMZN",
+            cantidad: 51,
+            precioARS: 2950,
+            fecha: "2025-06-01"
+        }, {
+            id: "init-wmt",
+            activo: "WMT",
+            cantidad: 51,
+            precioARS: 3850,
+            fecha: "2025-06-01"
+        }];
+
+        // Estado de la aplicación
+        let transacciones = [];
+        let preciosMercadoCustom = {};
+        let monedaActiva = 'ARS';
+        let chartInstance = null;
+        let mostrarSoloTenencias = false; // Estado del toggle de filtro
+
+        // Inicializar Datos desde localStorage o usar base por defecto
+        function inicializarDatos() {
+            const transaccionesGuardadas = localStorage.getItem('mi_retiro_transacciones_2036');
+            if (transaccionesGuardadas) {
+                transacciones = JSON.parse(transaccionesGuardadas);
+            } else {
+                transacciones = [...comprasIniciales];
+                localStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
+            }
+
+            const preciosGuardados = localStorage.getItem('mi_retiro_precios_custom');
+            if (preciosGuardados) {
+                preciosMercadoCustom = JSON.parse(preciosGuardados);
+            } else {
+                Object.keys(activosConfig).forEach(ticker => {
+                    preciosMercadoCustom[ticker] = activosConfig[ticker].precioMercadoARS;
+                });
+                localStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
+            }
+
+            // Recuperar hora de última actualización
+            const savedTime = localStorage.getItem('mi_retiro_last_update_time');
+            if (savedTime) {
+                document.getElementById('last-update-time').innerText = savedTime;
+            }
+
+            // Setear la fecha por defecto hoy
+            document.getElementById('compra-fecha').value = new Date().toISOString().split('T')[0];
+
+            // Escuchar cambios en el input del dólar CCL
+            document.getElementById('ccl-input').addEventListener('input', () => {
+                recalcularPortafolio();
+            });
+        }
+
+        // Cambiar filtro para mostrar solo activos con nominales mayores a cero
+        function toggleFiltroTenencias(checked) {
+            mostrarSoloTenencias = checked;
+            recalcularPortafolio();
+            mostrarToast(checked ? "Mostrando solo activos con saldo cargado" : "Mostrando todos los activos planificados", "info");
+        }
+
+        // Sistema propio de notificaciones Toast
+        function mostrarToast(mensaje, tipo = "info") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-xl shadow-xl border text-sm font-medium transition-all duration-300 transform translate-y-5 opacity-0 pointer-events-auto flex items-center space-x-3 max-w-sm `;
+
+            if (tipo === "success") {
+                toast.className += "bg-emerald-950/90 border-emerald-500/30 text-emerald-300";
+                toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i><span>${mensaje}</span>`;
+            } else if (tipo === "error") {
+                toast.className += "bg-red-950/90 border-red-500/30 text-red-300";
+                toast.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-400 text-lg"></i><span>${mensaje}</span>`;
+            } else {
+                toast.className += "bg-gray-900/95 border-gray-800 text-gray-200";
+                toast.innerHTML = `<i class="fa-solid fa-circle-info text-blue-400 text-lg"></i><span>${mensaje}</span>`;
+            }
+
+            container.appendChild(toast);
+
+            // Forzar reflow para animación
+            setTimeout(() => {
+                toast.classList.remove('translate-y-5', 'opacity-0');
+            }, 10);
+
+            // Eliminar después de 4 segundos
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Obtener el valor actual del dólar CCL cargado
+        function getDolarCCL() {
+            const inputVal = parseFloat(document.getElementById('ccl-input').value);
+            return isNaN(inputVal) || inputVal <= 0 ? 1480.70 : inputVal;
+        }
+
+        // Formateador de moneda dinámico (ARS o USD)
+        function formatMoneda(valor, moneda) {
+            const m = moneda || monedaActiva;
+            if (m === 'USD') {
+                return new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                }).format(valor);
+            } else {
+                return new Intl.NumberFormat('es-AR', {
+                    style: 'currency',
+                    currency: 'ARS',
+                    minimumFractionDigits: 2
+                }).format(valor);
+            }
+        }
+
+        // Cambiar la moneda activa para toda la interfaz
+        function setMoneda(tipo) {
+            monedaActiva = tipo;
+            const btnArs = document.getElementById('btn-moneda-ars');
+            const btnUsd = document.getElementById('btn-moneda-usd');
+            const chartLabel = document.getElementById('chart-currency-label');
+
+            if (tipo === 'USD') {
+                btnUsd.className = "flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow-lg shadow-blue-900/20";
+                btnArs.className = "flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-gray-800 text-gray-300 hover:bg-gray-700";
+                chartLabel.innerText = "Valores en Dólares (USD)";
+            } else {
+                btnArs.className = "flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-emerald-600 text-white shadow-lg shadow-emerald-900/20";
+                btnUsd.className = "flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all bg-gray-800 text-gray-300 hover:bg-gray-700";
+                chartLabel.innerText = "Valores en Pesos (ARS)";
+            }
+
+            recalcularPortafolio();
+        }
+
+        // Modificar el precio de mercado de forma interactiva (reconoce la moneda actual)
+        function actualizarPrecioMercado(ticker, nuevoPrecio) {
+            const valor = parseFloat(nuevoPrecio);
+            if (!isNaN(valor) && valor >= 0) {
+                const dolarCCL = getDolarCCL();
+                // Si el usuario ingresó el precio en dólares, lo guardamos convertido a pesos
+                const precioARS = monedaActiva === 'USD' ? (valor * dolarCCL) : valor;
+
+                preciosMercadoCustom[ticker] = Math.round(precioARS * 100) / 100;
+                localStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
+                recalcularPortafolio();
+            }
+        }
+
+        // Restablecer los precios de mercado a los valores de referencia cargados
+        function resetearPreciosMercado() {
+            Object.keys(activosConfig).forEach(ticker => {
+                preciosMercadoCustom[ticker] = activosConfig[ticker].precioMarketARS || activosConfig[ticker].precioMercadoARS;
+            });
+            localStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
+            localStorage.removeItem('mi_retiro_last_update_time');
+            document.getElementById('last-update-time').innerText = "Precios: Referencia Mayo 2026";
+            recalcularPortafolio();
+            mostrarToast("Precios de mercado restablecidos a valores por defecto.", "info");
+        }
+
+        // Borrar el historial de compras dejando solo la base
+        function borrarHistorialCompras() {
+            const confirmed = confirm("¿Estás seguro de que querés borrar todas tus transacciones? Esto restablecerá tu cartera a las 51 unidades base de Amazon y Walmart.");
+            if (confirmed) {
+                transacciones = [...comprasIniciales];
+                localStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
+                recalcularPortafolio();
+                mostrarToast("Historial de compras limpiado.", "info");
+            }
+        }
+
+        // Eliminar una transacción individual
+        function eliminarTransaccion(id) {
+            transacciones = transacciones.filter(t => t.id !== id);
+            localStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
+            recalcularPortafolio();
+            mostrarToast("Registro eliminado con éxito.", "success");
+        }
+
+        // Procesar formulario de nueva compra
+        document.getElementById('form-compra').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const activo = document.getElementById('compra-activo').value;
+            const cantidad = parseInt(document.getElementById('compra-cantidad').value);
+            const precioARS = parseFloat(document.getElementById('compra-precio').value);
+            const fecha = document.getElementById('compra-fecha').value;
+
+            if (activo && cantidad > 0 && precioARS >= 0 && fecha) {
+                const nuevaTransaccion = {
+                    id: 'tx-' + Date.now(),
+                    activo,
+                    cantidad,
+                    precioARS,
+                    fecha
+                };
+
+                transacciones.push(nuevaTransaccion);
+                localStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
+
+                document.getElementById('compra-cantidad').value = '';
+                document.getElementById('compra-precio').value = '';
+
+                recalcularPortafolio();
+                mostrarToast(`Agregados ${cantidad} nominales de ${activo} a la cartera.`, "success");
+            }
+        });
+
+        // ==========================================
+        //  INTEGRACIÓN DE ACTUALIZACIÓN CON IA (GEMINI)
+        // ==========================================
+        async function actualizarPreciosConIA() {
+            const btn = document.getElementById('btn-update-ia');
+            const icon = document.getElementById('ia-icon');
+            const text = document.getElementById('ia-text');
+
+            // Cambiar UI a modo cargando
+            btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+            icon.className = "fa-solid fa-spinner animate-spin";
+            text.innerText = "Buscando BYMA...";
+
+            mostrarToast("Buscando cotizaciones vigentes e índice CCL con Grounding de Google Search...", "info");
+
+            const queryPrompt = "Busca en la web y devuelve los precios de cierre o cotizaciones actuales de mercado en pesos argentinos (ARS) para los CEDEARs en BYMA de: AMZN, WMT, GOOGL, VIST, KO, MO, O, SPY, RSP, VWO. Además, busca el valor exacto actual del Dólar CCL (Contado con Liquidación). Devuelve los datos estrictamente en el formato JSON estructurado requerido.";
+
+            const systemPrompt = "Eres un analista financiero experto en el mercado de valores argentino (BYMA). Tu trabajo es buscar y retornar las cotizaciones reales vigentes más actualizadas posibles para los CEDEARs solicitados y el Dólar CCL actual en la fecha actual (fines de mayo o principios de junio de 2026). Debes responder exclusivamente con un objeto JSON válido que mapee cada ticker de CEDEAR a su valor numérico en pesos ARS, incluyendo el campo 'ccl'.";
+
+            const payload = {
+                contents: [{
+                    parts: [{
+                        text: queryPrompt
+                    }]
+                }],
+                systemInstruction: {
+                    parts: [{
+                        text: systemPrompt
+                    }]
+                },
+                tools: [{
+                    "google_search": {}
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            AMZN: {
+                                type: "NUMBER",
+                                description: "Precio del CEDEAR de Amazon en pesos"
+                            },
+                            WMT: {
+                                type: "NUMBER",
+                                description: "Precio del CEDEAR de Walmart en pesos"
+                            },
+                            GOOGL: {
+                                type: "NUMBER",
+                                description: "Precio del CEDEAR de Google en pesos"
+                            },
+                            VIST: {
+                                type: "NUMBER",
+                                description: "Precio del CEDEAR de Vista en pesos"
+                            },
+                            KO: {
+                                type: "NUMBER",
+                                description: "Precio del CEDEAR de Coca-Cola en pesos"
+                            },
+                            MO: {
+                                type: "NUMBER",
+                                description: "Precio del CEDEAR de Altria en pesos"
+                            },
+                            O: {
+                                type: "NUMBER",
+                                description: "Precio del CEDEAR de Realty Income en pesos"
+                            },
+                            SPY: {
+                                type: "NUMBER",
+                                description: "Precio del CEDEAR del SPY en pesos"
+                            },
+                            RSP: {
+                                type: "NUMBER",
+                                description: "Precio del CEDEAR del RSP en pesos"
+                            },
+                            VWO: {
+                                type: "NUMBER",
+                                description: "Precio del CEDEAR del VWO en pesos"
+                            },
+                            ccl: {
+                                type: "NUMBER",
+                                description: "Valor de cotización actual del Dolar CCL en pesos"
+                            }
+                        },
+                        required: ["AMZN", "WMT", "GOOGL", "VIST", "KO", "MO", "O", "SPY", "RSP", "VWO", "ccl"]
+                    }
+                }
+            };
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            async function fetchWithRetry(url, options, retries = 5, delay = 1000) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return await response.json();
+                } catch (error) {
+                    if (retries > 1) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        return fetchWithRetry(url, options, retries - 1, delay * 2);
+                    } else {
+                        throw error;
+                    }
+                }
+            }
+
+            try {
+                const result = await fetchWithRetry(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const jsonText = result.candidates ? .[0] ? .content ? .parts ? .[0] ? .text;
+                if (!jsonText) {
+                    throw new Error("No se recibieron datos de cotización en la respuesta estructurada.");
+                }
+
+                const data = JSON.parse(jsonText);
+
+                // Aplicar precios actualizados
+                Object.keys(activosConfig).forEach(ticker => {
+                    if (data[ticker] && typeof data[ticker] === 'number') {
+                        preciosMercadoCustom[ticker] = Math.round(data[ticker]);
+                    }
+                });
+
+                // Aplicar Dolar CCL real detectado
+                if (data.ccl && typeof data.ccl === 'number') {
+                    document.getElementById('ccl-input').value = data.ccl.toFixed(2);
+                }
+
+                // Guardar en almacenamiento persistente
+                localStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
+
+                // Guardar timestamp de actualización
+                const now = new Date();
+                const timeString = "En vivo: " + now.toLocaleDateString() + " " + now.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                document.getElementById('last-update-time').innerText = timeString;
+                localStorage.setItem('mi_retiro_last_update_time', timeString);
+
+                recalcularPortafolio();
+                mostrarToast("¡Planilla y CCL actualizados con éxito por IA (Google Search)!", "success");
+
+            } catch (err) {
+                console.error(err);
+                mostrarToast("No se pudieron consultar precios en vivo. Se mantendrán tus cotizaciones guardadas.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                icon.className = "fa-solid fa-wand-magic-sparkles animate-pulse";
+                text.innerText = "Actualizar Cotizaciones (IA)";
+            }
+        }
+
+        // Motor de Cálculo Principal
+        function recalcularPortafolio() {
+            const dolarCCL = getDolarCCL();
+
+            const consolidado = {};
+            Object.keys(activosConfig).forEach(ticker => {
+                consolidado[ticker] = {
+                    ticker: ticker,
+                    nombre: activosConfig[ticker].nombre,
+                    nominales: 0,
+                    inversionTotalARS: 0,
+                    precioPromedioARS: 0,
+                    precioMercadoARS: preciosMercadoCustom[ticker] || activosConfig[ticker].precioMercadoARS
+                };
+            });
+
+            // Procesar todas las transacciones cargadas
+            transacciones.forEach(tx => {
+                if (consolidado[tx.activo]) {
+                    consolidado[tx.activo].nominales += tx.cantidad;
+                    consolidado[tx.activo].inversionTotalARS += (tx.cantidad * tx.precioARS);
+                }
+            });
+
+            // Calcular precios promedios ponderados
+            Object.keys(consolidado).forEach(ticker => {
+                const item = consolidado[ticker];
+                if (item.nominales > 0) {
+                    item.precioPromedioARS = item.inversionTotalARS / item.nominales;
+                } else {
+                    item.precioPromedioARS = 0;
+                }
+            });
+
+            // Renderizar vistas e interfaz
+            renderizarTablas(consolidado, dolarCCL);
+            renderizarMetricasGenerales(consolidado, dolarCCL);
+            actualizarGrafico(consolidado, dolarCCL);
+        }
+
+        // Renderizar Tarjetas de Resumen
+        function renderizarMetricasGenerales(consolidado, dolarCCL) {
+            let totalInvertidoARS = 0;
+            let totalActualARS = 0;
+            let totalNominales = 0;
+
+            Object.keys(consolidado).forEach(ticker => {
+                const item = consolidado[ticker];
+                totalInvertidoARS += item.inversionTotalARS;
+                totalActualARS += (item.nominales * item.precioMercadoARS);
+                totalNominales += item.nominales;
+            });
+
+            const pnlARS = totalActualARS - totalInvertidoARS;
+            const pnlPercentage = totalInvertidoARS > 0 ? (pnlARS / totalInvertidoARS) * 100 : 0;
+
+            const elemInvertido = document.getElementById('metric-total-invertido');
+            const elemValorActual = document.getElementById('metric-valor-actual');
+            const elemPnL = document.getElementById('metric-pnl');
+            const elemPnLPercentage = document.getElementById('metric-pnl-percentage');
+            const elemPnLIconBg = document.getElementById('pnl-icon-bg');
+            const elemTotalActivos = document.getElementById('total-activos-count');
+
+            if (monedaActiva === 'USD') {
+                elemInvertido.innerText = formatMoneda(totalInvertidoARS / dolarCCL, 'USD');
+                elemValorActual.innerText = formatMoneda(totalActualARS / dolarCCL, 'USD');
+
+                if (pnlARS >= 0) {
+                    elemPnL.innerText = `+ ${formatMoneda(pnlARS / dolarCCL, 'USD')}`;
+                    elemPnL.className = "text-2xl font-bold mt-1 text-emerald-400";
+                    elemPnLPercentage.className = "font-bold text-emerald-400";
+                    elemPnLIconBg.className = "p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg text-sm";
+                    elemPnLIconBg.innerHTML = '<i class="fa-solid fa-arrow-trend-up"></i>';
+                } else {
+                    elemPnL.innerText = `- ${formatMoneda(Math.abs(pnlARS) / dolarCCL, 'USD')}`;
+                    elemPnL.className = "text-2xl font-bold mt-1 text-red-400";
+                    elemPnLPercentage.className = "font-bold text-red-400";
+                    elemPnLIconBg.className = "p-1.5 bg-red-500/10 text-red-400 rounded-lg text-sm";
+                    elemPnLIconBg.innerHTML = '<i class="fa-solid fa-arrow-trend-down"></i>';
+                }
+            } else {
+                elemInvertido.innerText = formatMoneda(totalInvertidoARS, 'ARS');
+                elemValorActual.innerText = formatMoneda(totalActualARS, 'ARS');
+
+                if (pnlARS >= 0) {
+                    elemPnL.innerText = `+ ${formatMoneda(pnlARS, 'ARS')}`;
+                    elemPnL.className = "text-2xl font-bold mt-1 text-emerald-400";
+                    elemPnLPercentage.className = "font-bold text-emerald-400";
+                    elemPnLIconBg.className = "p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg text-sm";
+                    elemPnLIconBg.innerHTML = '<i class="fa-solid fa-arrow-trend-up"></i>';
+                } else {
+                    elemPnL.innerText = `- ${formatMoneda(Math.abs(pnlARS), 'ARS')}`;
+                    elemPnL.className = "text-2xl font-bold mt-1 text-red-400";
+                    elemPnLPercentage.className = "font-bold text-red-400";
+                    elemPnLIconBg.className = "p-1.5 bg-red-500/10 text-red-400 rounded-lg text-sm";
+                    elemPnLIconBg.innerHTML = '<i class="fa-solid fa-arrow-trend-down"></i>';
+                }
+            }
+
+            elemPnLPercentage.innerText = `${pnlPercentage >= 0 ? '+' : ''}${pnlPercentage.toFixed(2)}%`;
+            elemTotalActivos.innerText = `${totalNominales} CEDEARs en Cartera`;
+        }
+
+        // Renderizar Tablas
+        function renderizarTablas(consolidado, dolarCCL) {
+            const tbodyPortafolio = document.getElementById('portfolio-rows');
+            tbodyPortafolio.innerHTML = '';
+
+            let hayPosiciones = false;
+
+            Object.keys(consolidado).forEach(ticker => {
+                        const item = consolidado[ticker];
+
+                        // Si el filtro está activo, omitimos activos sin saldo cargado
+                        if (mostrarSoloTenencias && item.nominales <= 0) return;
+
+                        hayPosiciones = true;
+
+                        const inversionTotal = monedaActiva === 'USD' ? (item.inversionTotalARS / dolarCCL) : item.inversionTotalARS;
+                        const precioPromedio = item.nominales > 0 ? (monedaActiva === 'USD' ? (item.precioPromedioARS / dolarCCL) : item.precioPromedioARS) : 0;
+
+                        // Mostrar siempre el precio de mercado adaptado a la moneda de visualización actual
+                        const precioMercado = monedaActiva === 'USD' ? (item.precioMercadoARS / dolarCCL) : item.precioMercadoARS;
+                        const valorActual = item.nominales * precioMercado;
+
+                        const rtaARS = item.nominales > 0 ? ((item.nominales * item.precioMercadoARS) - item.inversionTotalARS) : 0;
+                        const rtaValor = monedaActiva === 'USD' ? (rtaARS / dolarCCL) : rtaARS;
+                        const rtaPorcentaje = item.inversionTotalARS > 0 ? (rtaARS / item.inversionTotalARS) * 100 : 0;
+
+                        const row = document.createElement('tr');
+                        row.className = "hover:bg-gray-800/20 transition-all border-b border-gray-800/40";
+
+                        row.innerHTML = `
+                    <td class="py-4 px-4 font-medium text-white flex items-center space-x-2.5">
+                        <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${activosConfig[ticker].color}"></span>
+                        <div>
+                            <span class="font-bold text-sm text-gray-100">${ticker}</span>
+                            <span class="block text-[10px] text-gray-400 font-normal">${item.nombre}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4 text-center font-bold text-gray-200">${item.nominales}</td>
+                    <td class="py-4 px-4 text-right font-medium text-gray-300">
+                        ${item.nominales > 0 ? formatMoneda(precioPromedio) : '<span class="text-gray-600">-</span>'}
+                    </td>
+                    <td class="py-4 px-4 text-right text-gray-300 font-semibold">
+                        ${item.nominales > 0 ? formatMoneda(inversionTotal) : '<span class="text-gray-600">-</span>'}
+                    </td>
+                    <td class="py-4 px-4 text-right">
+                        <div class="inline-flex items-center space-x-1">
+                            <span class="text-xs text-gray-500 font-mono">${monedaActiva === 'USD' ? 'u$d' : '$'}</span>
+                            <input type="number" step="0.01" value="${precioMercado.toFixed(2)}" 
+                                onchange="actualizarPrecioMercado('${ticker}', this.value)" 
+                                class="w-24 text-right bg-gray-950/80 border border-gray-800 hover:border-gray-700 focus:border-emerald-500 rounded px-1.5 py-0.5 text-xs text-white focus:outline-none transition-all">
+                        </div>
+                    </td>
+                    <td class="py-4 px-4 text-right font-bold text-white">
+                        ${item.nominales > 0 ? formatMoneda(valorActual) : '<span class="text-gray-600">-</span>'}
+                    </td>
+                    <td class="py-4 px-4 text-right font-bold ${item.nominales > 0 ? (rtaARS >= 0 ? 'text-emerald-400' : 'text-red-400') : 'text-gray-500'}">
+                        ${item.nominales > 0 ? ((rtaARS >= 0 ? '+' : '') + formatMoneda(rtaValor)) : '<span class="text-gray-600">-</span>'}
+                    </td>
+                    <td class="py-4 px-4 text-center">
+                        ${item.nominales > 0 ? `
+                            <span class="inline-block px-2 py-0.5 rounded text-xs font-bold ${rtaARS >= 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}">
+                                ${rtaARS >= 0 ? '+' : ''}${rtaPorcentaje.toFixed(1)}%
+                            </span>
+                        ` : '<span class="text-gray-600 text-xs">-</span>'}
+                    </td>
+                `;
+
+                tbodyPortafolio.appendChild(row);
+            });
+
+            if (!hayPosiciones) {
+                tbodyPortafolio.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="py-8 text-center text-gray-500 text-xs">
+                            <i class="fa-solid fa-circle-exclamation text-xl mb-2 block text-gray-600"></i> No hay activos que coincidan con el filtro actual.
+                        </td>
+                    </tr>
+                `;
+            }
+
+            // Historial de Transacciones individuales
+            const tbodyTransacciones = document.getElementById('transaction-rows');
+            tbodyTransacciones.innerHTML = '';
+
+            const txOrdenadas = [...transacciones].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+            txOrdenadas.forEach(tx => {
+                const totalARS = tx.cantidad * tx.precioARS;
+                const totalValor = monedaActiva === 'USD' ? (totalARS / dolarCCL) : totalARS;
+                const precioValor = monedaActiva === 'USD' ? (tx.precioARS / dolarCCL) : tx.precioARS;
+
+                const row = document.createElement('tr');
+                row.className = "hover:bg-gray-800/10 transition-all";
+                row.innerHTML = `
+                    <td class="py-2.5 px-4 text-gray-400 font-mono text-xs">${tx.fecha}</td>
+                    <td class="py-2.5 px-4 text-white font-bold">${tx.activo}</td>
+                    <td class="py-2.5 px-4 text-center font-medium">${tx.cantidad} u.</td>
+                    <td class="py-2.5 px-4 text-right">${formatMoneda(precioValor)}</td>
+                    <td class="py-2.5 px-4 text-right font-semibold text-gray-200">${formatMoneda(totalValor)}</td>
+                    <td class="py-2.5 px-4 text-center">
+                        <button onclick="eliminarTransaccion('${tx.id}')" class="text-gray-500 hover:text-red-400 p-1 rounded transition-all" title="Eliminar registro">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </td>
+                `;
+                tbodyTransacciones.appendChild(row);
+            });
+
+            if (txOrdenadas.length === 0) {
+                tbodyTransacciones.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-4 text-center text-gray-600 text-[11px]">
+                            Ninguna compra registrada todavía.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Renderizar / Actualizar el Gráfico
+        function actualizarGrafico(consolidado, dolarCCL) {
+            let totalInvertido = 0;
+            let totalActual = 0;
+
+            Object.keys(consolidado).forEach(ticker => {
+                const item = consolidado[ticker];
+                totalInvertido += item.inversionTotalARS;
+                totalActual += (item.nominales * item.precioMercadoARS);
+            });
+
+            if (monedaActiva === 'USD') {
+                totalInvertido = totalInvertido / dolarCCL;
+                totalActual = totalActual / dolarCCL;
+            }
+
+            document.getElementById('chart-sub-capital').innerText = formatMoneda(totalInvertido);
+            
+            const diff = totalActual - totalInvertido;
+            const subPatrimonio = document.getElementById('chart-sub-patrimonio');
+            subPatrimonio.innerText = formatMoneda(totalActual);
+            if (diff >= 0) {
+                subPatrimonio.className = "text-base font-bold text-emerald-400 mt-1";
+            } else {
+                subPatrimonio.className = "text-base font-bold text-red-400 mt-1";
+            }
+
+            const ctx = document.getElementById('performance-chart').getContext('2d');
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Dinero Puesto (Capital)', 'Valor Actual de Mercado'],
+                    datasets: [{
+                        data: [totalInvertido.toFixed(2), totalActual.toFixed(2)],
+                        backgroundColor: [
+                            'rgba(75, 85, 99, 0.6)',  
+                            diff >= 0 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)' 
+                        ],
+                        borderColor: [
+                            '#4b5563',
+                            diff >= 0 ? '#10b981' : '#ef4444'
+                        ],
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: {
+                                color: 'rgba(75, 85, 99, 0.1)'
+                            },
+                            ticks: {
+                                color: '#9ca3af',
+                                callback: function(value) {
+                                    return formatMoneda(value).split(',')[0]; 
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#e5e7eb',
+                                font: {
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Inicializar la aplicación
+        window.onload = function() {
+            inicializarDatos();
+            recalcularPortafolio();
+        };
+    </script>
+</body>
+
+</html>
