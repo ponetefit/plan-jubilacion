@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Retiro 2036 - Gestor de CEDEARs con IA</title>
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
     <!-- Chart.js para el gráfico de rendimiento -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="[https://cdn.jsdelivr.net/npm/chart.js](https://cdn.jsdelivr.net/npm/chart.js)"></script>
     <!-- FontAwesome para iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('[https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap)');
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -601,6 +601,18 @@
             }
         });
 
+        // Parser robusto para limpiar marcas de Markdown y devolver JSON de forma segura
+        function parseRobustJSON(text) {
+            if (!text) return null;
+            let cleanText = text.trim();
+            if (cleanText.startsWith("```")) {
+                cleanText = cleanText.replace(/^```[a-zA-Z]*\s*/, "");
+                cleanText = cleanText.replace(/\s*```$/, "");
+            }
+            cleanText = cleanText.trim();
+            return JSON.parse(cleanText);
+        }
+
         // ==========================================
         //  INTEGRACIÓN DE ACTUALIZACIÓN CON IA (GEMINI)
         // ==========================================
@@ -619,8 +631,9 @@
 
             const queryPrompt = "Busca en la web y devuelve los precios de cierre o cotizaciones actuales de mercado en pesos argentinos (ARS) para los CEDEARs en BYMA de: AMZN, WMT, GOOGL, VIST, KO, MO, O, SPY, RSP, VWO. Además, busca el valor exacto actual del Dólar CCL (Contado con Liquidación). Devuelve los datos estrictamente en el formato JSON estructurado requerido.";
 
-            const systemPrompt = "Eres un analista financiero experto en el mercado de valores argentino (BYMA). Tu trabajo es buscar y retornar las cotizaciones reales vigentes más actualizadas posibles para los CEDEARs solicitados y el Dólar CCL actual en la fecha actual (fines de mayo o principios de junio de 2026). Debes responder exclusivamente con un objeto JSON válido que mapee cada ticker de CEDEAR a su valor numérico en pesos ARS, incluyendo el campo 'ccl'.";
+            const systemPrompt = "Eres un analista financiero experto en el mercado de valores argentino (BYMA). Tu trabajo es buscar y retornar las cotizaciones reales vigentes más actualizadas posibles para los CEDEARs solicitados y el Dólar CCL actual en la fecha actual. Debes responder exclusivamente con un objeto JSON válido que mapee cada ticker de CEDEAR a su valor numérico en pesos ARS, incluyendo el campo 'ccl'.";
 
+            // Corregido: tipos de esquema a minúscula estándar de JSON Schema ("number" y "object")
             const payload = {
                 contents: [{ parts: [{ text: queryPrompt }] }],
                 systemInstruction: { parts: [{ text: systemPrompt }] },
@@ -628,19 +641,19 @@
                 generationConfig: {
                     responseMimeType: "application/json",
                     responseSchema: {
-                        type: "OBJECT",
+                        type: "object",
                         properties: {
-                            AMZN: { type: "NUMBER", description: "Precio del CEDEAR de Amazon en pesos" },
-                            WMT: { type: "NUMBER", description: "Precio del CEDEAR de Walmart en pesos" },
-                            GOOGL: { type: "NUMBER", description: "Precio del CEDEAR de Google en pesos" },
-                            VIST: { type: "NUMBER", description: "Precio del CEDEAR de Vista en pesos" },
-                            KO: { type: "NUMBER", description: "Precio del CEDEAR de Coca-Cola en pesos" },
-                            MO: { type: "NUMBER", description: "Precio del CEDEAR de Altria en pesos" },
-                            O: { type: "NUMBER", description: "Precio del CEDEAR de Realty Income en pesos" },
-                            SPY: { type: "NUMBER", description: "Precio del CEDEAR del SPY en pesos" },
-                            RSP: { type: "NUMBER", description: "Precio del CEDEAR del RSP en pesos" },
-                            VWO: { type: "NUMBER", description: "Precio del CEDEAR del VWO en pesos" },
-                            ccl: { type: "NUMBER", description: "Valor de cotización actual del Dolar CCL en pesos" }
+                            AMZN: { type: "number", description: "Precio del CEDEAR de Amazon en pesos" },
+                            WMT: { type: "number", description: "Precio del CEDEAR de Walmart en pesos" },
+                            GOOGL: { type: "number", description: "Precio del CEDEAR de Google en pesos" },
+                            VIST: { type: "number", description: "Precio del CEDEAR de Vista en pesos" },
+                            KO: { type: "number", description: "Precio del CEDEAR de Coca-Cola en pesos" },
+                            MO: { type: "number", description: "Precio del CEDEAR de Altria en pesos" },
+                            O: { type: "number", description: "Precio del CEDEAR de Realty Income en pesos" },
+                            SPY: { type: "number", description: "Precio del CEDEAR del SPY en pesos" },
+                            RSP: { type: "number", description: "Precio del CEDEAR del RSP en pesos" },
+                            VWO: { type: "number", description: "Precio del CEDEAR del VWO en pesos" },
+                            ccl: { type: "number", description: "Valor de cotización actual del Dolar CCL en pesos" }
                         },
                         required: ["AMZN", "WMT", "GOOGL", "VIST", "KO", "MO", "O", "SPY", "RSP", "VWO", "ccl"]
                     }
@@ -653,7 +666,7 @@
                 try {
                     const response = await fetch(url, options);
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        throw new Error(`Error de conexión HTTP! Código de respuesta: ${response.status}`);
                     }
                     return await response.json();
                 } catch (error) {
@@ -675,10 +688,13 @@
 
                 const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!jsonText) {
-                    throw new Error("No se recibieron datos de cotización en la respuesta estructurada.");
+                    throw new Error("No se recibieron datos de cotización estructurada del servidor de IA.");
                 }
 
-                const data = JSON.parse(jsonText);
+                const data = parseRobustJSON(jsonText);
+                if (!data) {
+                    throw new Error("El formato de respuesta de cotización no pudo ser procesado.");
+                }
 
                 // Aplicar precios actualizados
                 Object.keys(activosConfig).forEach(ticker => {
@@ -705,8 +721,8 @@
                 mostrarToast("¡Planilla y CCL actualizados con éxito por IA (Google Search)!", "success");
 
             } catch (err) {
-                console.error(err);
-                mostrarToast("No se pudieron consultar precios en vivo. Se mantendrán tus cotizaciones guardadas.", "error");
+                console.error("Fallo en actualización por IA:", err);
+                mostrarToast("Error en actualización: " + err.message, "error");
             } finally {
                 btn.disabled = false;
                 btn.classList.remove('opacity-70', 'cursor-not-allowed');
