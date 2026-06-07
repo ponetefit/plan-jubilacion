@@ -1,0 +1,28 @@
+{
+  "fecha": "07/06/2026 14:29",
+  "moneda": "ARS",
+  "fuente": "Yahoo Finance · BYMA",
+  "tickers_ba": {
+    "AMZN": "AMZN.BA",
+    "WMT": "WMT.BA",
+    "GOOGL": "GOOGL.BA",
+    "VIST": "VIST.BA",
+    "KO": "KO.BA",
+    "MO": "MO.BA",
+    "O": "O.BA",
+    "SPY": "SPY.BA",
+    "RSP": "RSP.BA",
+    "VWO": "VWO.BA"
+  },
+  "precios_ars": {
+    "AMZN": 2580.0,
+    "WMT": 9995.0,
+    "GOOGL": 9600.0,
+    "VIST": 37400.0,
+    "KO": 24060.0,
+    "MO": 27380.0,
+    "O": 7080.0,
+    "SPY": 18600.0,
+    "RSP": 10500.0
+  }
+}
