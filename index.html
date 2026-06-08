@@ -16,7 +16,11 @@
         @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .animate-pulse-slow { animation: pulse-slow 3s ease-in-out infinite; }
         .countdown-active { animation: pulse-slow 2s ease-in-out infinite; }
+        #firebase-status { transition: all 0.3s; }
     </style>
+    <!-- Firebase SDK (compat mode, no bundler needed) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
 
@@ -61,12 +65,17 @@
                 </div>
             </div>
             <div class="flex items-center space-x-2 flex-wrap gap-y-1 justify-end">
+                <!-- Indicador Firebase -->
+                <div id="firebase-status" class="flex items-center space-x-1.5 bg-gray-900/80 border border-gray-800 px-2.5 py-1 rounded-md">
+                    <span id="firebase-dot" class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+                    <span id="firebase-label" class="text-[10px] font-mono text-yellow-400">Conectando...</span>
+                </div>
                 <!-- Cuenta regresiva al cierre -->
                 <div id="countdown-container" class="flex items-center space-x-1.5 bg-gray-900/80 border border-gray-800 px-2.5 py-1 rounded-md">
                     <i id="countdown-icon" class="fa-solid fa-clock text-yellow-400 text-[10px]"></i>
                     <span id="countdown-badge" class="text-[10px] font-mono text-yellow-400">Calculando...</span>
                 </div>
-                <span id="last-update-time" class="text-[10px] text-gray-400 font-mono bg-gray-900/80 px-2.5 py-1 rounded-md border border-gray-800">Precios: En vivo 08/06/2026 14:23</span>
+                <span id="last-update-time" class="text-[10px] text-gray-400 font-mono bg-gray-900/80 px-2.5 py-1 rounded-md border border-gray-800">Precios: Cierre Vie 06/06/2025</span>
                 <button onclick="actualizarPreciosConIA()" id="btn-update-ia" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-2 px-4 rounded-lg text-xs transition-all shadow-lg shadow-indigo-950/30 flex items-center space-x-2">
                     <i id="ia-icon" class="fa-solid fa-wand-magic-sparkles animate-pulse"></i>
                     <span id="ia-text">Actualizar Cotizaciones (IA)</span>
@@ -448,25 +457,174 @@
     </footer>
 
     <script>
-        // ─── ALMACENAMIENTO SEGURO ───────────────────────────────────────────────────
+        // ─── FIREBASE CONFIG ─────────────────────────────────────────────────────────
+        const firebaseConfig = {
+            apiKey: "AIzaSyCNoU8llwD2e4SzIcIgTm-OZZQxrIXVzd0",
+            authDomain: "jubilacion-e0dea.firebaseapp.com",
+            projectId: "jubilacion-e0dea",
+            storageBucket: "jubilacion-e0dea.firebasestorage.app",
+            messagingSenderId: "930129257454",
+            appId: "1:930129257454:web:c9f7f63e474e90114164ff",
+            measurementId: "G-YSH1RK9MEQ"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // ID fijo de documento (portafolio de un solo usuario)
+        const DOC_PORTAFOLIO = 'portafolio_principal';
+        const DOC_HISTORIAL  = 'historial_principal';
+
+        // ─── ESTADO DE FIREBASE ──────────────────────────────────────────────────────
+        function setFirebaseStatus(estado) {
+            // estado: 'conectando' | 'ok' | 'error'
+            const dot   = document.getElementById('firebase-dot');
+            const label = document.getElementById('firebase-label');
+            if (!dot || !label) return;
+            if (estado === 'ok') {
+                dot.className   = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
+                label.className = 'text-[10px] font-mono text-emerald-400';
+                label.textContent = 'Firebase ✓';
+            } else if (estado === 'error') {
+                dot.className   = 'w-1.5 h-1.5 rounded-full bg-red-400';
+                label.className = 'text-[10px] font-mono text-red-400';
+                label.textContent = 'Sin conexión';
+            } else {
+                dot.className   = 'w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse';
+                label.className = 'text-[10px] font-mono text-yellow-400';
+                label.textContent = 'Conectando...';
+            }
+        }
+
+        // ─── ALMACENAMIENTO: FIREBASE + localStorage como fallback ───────────────────
         const safeStorage = {
             _backup: {},
-            getItem(key) { try { return localStorage.getItem(key); } catch { return this._backup[key] || null; } },
-            setItem(key, value) { try { localStorage.setItem(key, value); } catch { this._backup[key] = value; } },
-            removeItem(key) { try { localStorage.removeItem(key); } catch { delete this._backup[key]; } }
+            getItem(key)        { try { return localStorage.getItem(key); }        catch { return this._backup[key] || null; } },
+            setItem(key, value) { try { localStorage.setItem(key, value); }        catch { this._backup[key] = value; } },
+            removeItem(key)     { try { localStorage.removeItem(key); }            catch { delete this._backup[key]; } }
         };
+
+        // ─── GUARDAR PORTAFOLIO EN FIREBASE ─────────────────────────────────────────
+        async function guardarEnFirebase() {
+            try {
+                await db.collection('portafolio').doc(DOC_PORTAFOLIO).set({
+                    transacciones:    transacciones,
+                    preciosMercado:   preciosMercadoCustom,
+                    lastUpdateTime:   safeStorage.getItem('mi_retiro_last_update_time') || '',
+                    autoUpdate:       autoUpdateActivo,
+                    cierreHora:       document.getElementById('cierre-hora')?.value   || '18',
+                    cierreMinuto:     document.getElementById('cierre-minuto')?.value || '0',
+                    updatedAt:        firebase.firestore.FieldValue.serverTimestamp()
+                });
+                setFirebaseStatus('ok');
+            } catch (err) {
+                console.error('[Firebase] Error al guardar portafolio:', err);
+                setFirebaseStatus('error');
+            }
+        }
+
+        // ─── GUARDAR HISTORIAL EN FIREBASE ──────────────────────────────────────────
+        async function guardarHistorialEnFirebase() {
+            try {
+                await db.collection('portafolio').doc(DOC_HISTORIAL).set({
+                    historial:  historialPortafolio,
+                    updatedAt:  firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (err) {
+                console.error('[Firebase] Error al guardar historial:', err);
+            }
+        }
+
+        // ─── CARGAR PORTAFOLIO DESDE FIREBASE ───────────────────────────────────────
+        async function cargarDesdeFirebase() {
+            setFirebaseStatus('conectando');
+            try {
+                const docPort = await db.collection('portafolio').doc(DOC_PORTAFOLIO).get();
+                const docHist = await db.collection('portafolio').doc(DOC_HISTORIAL).get();
+
+                if (docPort.exists) {
+                    const data = docPort.data();
+
+                    // Transacciones
+                    if (Array.isArray(data.transacciones) && data.transacciones.length > 0) {
+                        transacciones = data.transacciones;
+                    } else {
+                        transacciones = [...comprasIniciales];
+                    }
+
+                    // Precios de mercado
+                    if (data.preciosMercado && typeof data.preciosMercado === 'object') {
+                        preciosMercadoCustom = data.preciosMercado;
+                    }
+
+                    // Tiempo de última actualización
+                    if (data.lastUpdateTime) {
+                        document.getElementById('last-update-time').innerText = data.lastUpdateTime;
+                        safeStorage.setItem('mi_retiro_last_update_time', data.lastUpdateTime);
+                    }
+
+                    // Auto-update
+                    if (typeof data.autoUpdate === 'boolean') {
+                        autoUpdateActivo = data.autoUpdate;
+                    }
+
+                    // Horario de cierre
+                    if (data.cierreHora)   document.getElementById('cierre-hora').value   = data.cierreHora;
+                    if (data.cierreMinuto) document.getElementById('cierre-minuto').value = data.cierreMinuto;
+
+                } else {
+                    // Primera vez: no hay datos en Firebase, usar compras iniciales
+                    transacciones = [...comprasIniciales];
+                    console.log('[Firebase] Documento nuevo — inicializando con datos base.');
+                }
+
+                // Historial
+                if (docHist.exists && Array.isArray(docHist.data().historial)) {
+                    historialPortafolio = docHist.data().historial;
+                }
+
+                // Asegurar que todos los tickers tengan precio
+                Object.keys(activosConfig).forEach(t => {
+                    if (!preciosMercadoCustom[t] || isNaN(parseFloat(preciosMercadoCustom[t])))
+                        preciosMercadoCustom[t] = activosConfig[t].precioMercadoARS;
+                });
+
+                // Sincronizar toggles de auto-update
+                document.getElementById('toggle-autoupdate').checked   = autoUpdateActivo;
+                document.getElementById('toggle-autoupdate-2').checked = autoUpdateActivo;
+                sincronizarToggleUI('toggle-track',   'toggle-thumb',   autoUpdateActivo);
+                sincronizarToggleUI('toggle-track-2', 'toggle-thumb-2', autoUpdateActivo);
+
+                setFirebaseStatus('ok');
+                console.log('[Firebase] Datos cargados correctamente.');
+
+            } catch (err) {
+                console.error('[Firebase] Error al cargar datos:', err);
+                setFirebaseStatus('error');
+                mostrarToast('Error de conexión con Firebase. Usando datos locales.', 'error');
+
+                // Fallback a localStorage
+                const saved = safeStorage.getItem('mi_retiro_transacciones_2036');
+                transacciones = saved ? (JSON.parse(saved) || [...comprasIniciales]) : [...comprasIniciales];
+                const precios = safeStorage.getItem('mi_retiro_precios_custom');
+                if (precios) preciosMercadoCustom = JSON.parse(precios) || {};
+                Object.keys(activosConfig).forEach(t => {
+                    if (!preciosMercadoCustom[t] || isNaN(parseFloat(preciosMercadoCustom[t])))
+                        preciosMercadoCustom[t] = activosConfig[t].precioMercadoARS;
+                });
+            }
+        }
 
         // ─── CONFIGURACIÓN DE ACTIVOS ────────────────────────────────────────────────
         const activosConfig = {
-            AMZN: { nombre: "Amazon Inc.",           precioMercadoARS: 2580.00,  color: "#f99f1b" },
-            WMT:  { nombre: "Walmart Inc.",           precioMercadoARS: 10070.00,  color: "#ffc220" },
-            GOOGL:{ nombre: "Alphabet (Google)",      precioMercadoARS: 9470.00,  color: "#4285f4" },
-            VIST: { nombre: "Vista Energy",           precioMercadoARS: 37400.00, color: "#10b981" },
-            KO:   { nombre: "Coca-Cola Co.",          precioMercadoARS: 24070.00, color: "#f40009" },
-            MO:   { nombre: "Altria Group",           precioMercadoARS: 27120.00, color: "#7c3aed" },
-            O:    { nombre: "Realty Income",          precioMercadoARS: 7020.00,  color: "#ec4899" },
-            SPY:  { nombre: "S&P 500 ETF",            precioMercadoARS: 18760.00, color: "#ef4444" },
-            RSP:  { nombre: "S&P 500 Equal Weight",   precioMercadoARS: 10540.00, color: "#06b6d4" },
+            AMZN: { nombre: "Amazon Inc.",           precioMercadoARS: 2950,  color: "#f99f1b" },
+            WMT:  { nombre: "Walmart Inc.",           precioMercadoARS: 3850,  color: "#ffc220" },
+            GOOGL:{ nombre: "Alphabet (Google)",      precioMercadoARS: 9800,  color: "#4285f4" },
+            VIST: { nombre: "Vista Energy",           precioMercadoARS: 36700, color: "#10b981" },
+            KO:   { nombre: "Coca-Cola Co.",          precioMercadoARS: 23510, color: "#f40009" },
+            MO:   { nombre: "Altria Group",           precioMercadoARS: 25840, color: "#7c3aed" },
+            O:    { nombre: "Realty Income",          precioMercadoARS: 5800,  color: "#ec4899" },
+            SPY:  { nombre: "S&P 500 ETF",            precioMercadoARS: 18760, color: "#ef4444" },
+            RSP:  { nombre: "S&P 500 Equal Weight",   precioMercadoARS: 10350, color: "#06b6d4" },
             VWO:  { nombre: "Emerging Markets ETF",   precioMercadoARS: 11950, color: "#84cc16" }
         };
 
@@ -533,51 +691,18 @@
             // Mantener máximo 120 puntos (≈4 meses)
             if (historialPortafolio.length > 120) historialPortafolio.splice(0, historialPortafolio.length - 120);
             safeStorage.setItem('mi_retiro_historial', JSON.stringify(historialPortafolio));
+            guardarHistorialEnFirebase();
         }
 
         // ─── INICIALIZACIÓN ──────────────────────────────────────────────────────────
-        function inicializarDatos() {
-            cargarHistorial();
-            const saved = safeStorage.getItem('mi_retiro_transacciones_2036');
-            if (saved) {
-                try { transacciones = JSON.parse(saved); if (!Array.isArray(transacciones)) transacciones = [...comprasIniciales]; }
-                catch { transacciones = [...comprasIniciales]; }
-            } else {
-                transacciones = [...comprasIniciales];
-                safeStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
-            }
-
-            const precios = safeStorage.getItem('mi_retiro_precios_custom');
-            if (precios) {
-                try { preciosMercadoCustom = JSON.parse(precios); if (typeof preciosMercadoCustom !== 'object') preciosMercadoCustom = {}; }
-                catch { preciosMercadoCustom = {}; }
-            }
-
-            Object.keys(activosConfig).forEach(t => {
-                if (!preciosMercadoCustom[t] || isNaN(parseFloat(preciosMercadoCustom[t])))
-                    preciosMercadoCustom[t] = activosConfig[t].precioMercadoARS;
-            });
-            safeStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
-
-            const savedTime = safeStorage.getItem('mi_retiro_last_update_time');
-            if (savedTime) document.getElementById('last-update-time').innerText = savedTime;
-
-            // Leer estado de auto-update guardado
-            const savedAutoUpdate = safeStorage.getItem('mi_retiro_autoupdate');
-            autoUpdateActivo = savedAutoUpdate === null ? true : savedAutoUpdate === 'true';
-            document.getElementById('toggle-autoupdate').checked   = autoUpdateActivo;
-            document.getElementById('toggle-autoupdate-2').checked = autoUpdateActivo;
-            sincronizarToggleUI('toggle-track',   'toggle-thumb',   autoUpdateActivo);
-            sincronizarToggleUI('toggle-track-2', 'toggle-thumb-2', autoUpdateActivo);
-
-            // Leer horario guardado
-            const savedHora = safeStorage.getItem('mi_retiro_cierre_hora');
-            const savedMin  = safeStorage.getItem('mi_retiro_cierre_minuto');
-            if (savedHora) document.getElementById('cierre-hora').value   = savedHora;
-            if (savedMin)  document.getElementById('cierre-minuto').value = savedMin;
-
+        async function inicializarDatos() {
             document.getElementById('compra-fecha').value = new Date().toISOString().split('T')[0];
             document.getElementById('ccl-input').addEventListener('input', recalcularPortafolio);
+            // Cargar historial local primero (para no bloquear el render inicial)
+            cargarHistorial();
+            // Luego cargar todo desde Firebase y re-renderizar
+            await cargarDesdeFirebase();
+            recalcularPortafolio();
         }
 
         // ─── UTILIDADES ──────────────────────────────────────────────────────────────
@@ -645,6 +770,7 @@
                 preciosMercadoCustom[ticker] = Math.round(precioARS * 100) / 100;
                 safeStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
                 recalcularPortafolio();
+                guardarEnFirebase();
             }
         }
 
@@ -654,6 +780,7 @@
             safeStorage.removeItem('mi_retiro_last_update_time');
             document.getElementById('last-update-time').innerText = "Precios: Cierre Vie 06/06/2025";
             recalcularPortafolio();
+            guardarEnFirebase();
             mostrarToast("Precios restablecidos a valores de referencia.", "info");
         }
 
@@ -662,6 +789,7 @@
             transacciones = [...comprasIniciales];
             safeStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
             recalcularPortafolio();
+            guardarEnFirebase();
             mostrarToast("Historial de compras limpiado.", "info");
         }
 
@@ -669,6 +797,7 @@
             transacciones = transacciones.filter(t => t.id !== id);
             safeStorage.setItem('mi_retiro_transacciones_2036', JSON.stringify(transacciones));
             recalcularPortafolio();
+            guardarEnFirebase();
             mostrarToast("Registro eliminado.", "success");
         }
 
@@ -688,6 +817,7 @@
             document.getElementById('compra-cantidad').value = '';
             document.getElementById('compra-precio').value   = '';
             recalcularPortafolio();
+            guardarEnFirebase();
             mostrarToast(`¡Guardado! ${cantidad} nominales de ${activo} agregados.`, "success");
         });
 
@@ -736,6 +866,7 @@
                 safeStorage.setItem('mi_retiro_last_update_time', timeString);
 
                 recalcularPortafolio();
+                await guardarEnFirebase();
                 mostrarToast(`¡${actualizados} CEDEARs actualizados desde BYMA (ARS)!`, "success");
 
             } catch (err) {
@@ -938,6 +1069,7 @@
                 const container = document.getElementById('countdown-container');
                 if (container) container.className = 'flex items-center space-x-1.5 bg-gray-900/80 border border-gray-800 px-2.5 py-1 rounded-md opacity-40';
             }
+            guardarEnFirebase();
         }
 
         function toggleAutoUpdateDesdePanel(activo) {
@@ -952,6 +1084,7 @@
                 programarActualizacionDiaria();
                 mostrarToast(`Horario de cierre actualizado a las ${String(hora).padStart(2,'0')}:${String(minuto).padStart(2,'0')} hs.`, "success");
             }
+            guardarEnFirebase();
         }
 
         // ─── MOTOR DE CÁLCULO ────────────────────────────────────────────────────────
@@ -1369,9 +1502,9 @@
         }
 
         // ─── ARRANQUE ────────────────────────────────────────────────────────────────
-        window.onload = function() {
-            inicializarDatos();
-            recalcularPortafolio();
+        window.onload = async function() {
+            await inicializarDatos();
+            // inicializarDatos ya llama recalcularPortafolio() al final
 
             // Iniciar auto-update si está activado
             if (autoUpdateActivo) {
