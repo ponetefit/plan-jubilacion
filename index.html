@@ -66,7 +66,7 @@
                     <i id="countdown-icon" class="fa-solid fa-clock text-yellow-400 text-[10px]"></i>
                     <span id="countdown-badge" class="text-[10px] font-mono text-yellow-400">Calculando...</span>
                 </div>
-                <span id="last-update-time" class="text-[10px] text-gray-400 font-mono bg-gray-900/80 px-2.5 py-1 rounded-md border border-gray-800">Precios: En vivo 08/06/2026 13:29</span>
+                <span id="last-update-time" class="text-[10px] text-gray-400 font-mono bg-gray-900/80 px-2.5 py-1 rounded-md border border-gray-800">Precios: Cierre Vie 06/06/2025</span>
                 <button onclick="actualizarPreciosConIA()" id="btn-update-ia" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-2 px-4 rounded-lg text-xs transition-all shadow-lg shadow-indigo-950/30 flex items-center space-x-2">
                     <i id="ia-icon" class="fa-solid fa-wand-magic-sparkles animate-pulse"></i>
                     <span id="ia-text">Actualizar Cotizaciones (IA)</span>
@@ -349,15 +349,15 @@
 
         // ─── CONFIGURACIÓN DE ACTIVOS ────────────────────────────────────────────────
         const activosConfig = {
-            AMZN: { nombre: "Amazon Inc.",           precioMercadoARS: 2590.00,  color: "#f99f1b" },
-            WMT:  { nombre: "Walmart Inc.",           precioMercadoARS: 10110.00,  color: "#ffc220" },
-            GOOGL:{ nombre: "Alphabet (Google)",      precioMercadoARS: 9480.00,  color: "#4285f4" },
-            VIST: { nombre: "Vista Energy",           precioMercadoARS: 37560.00, color: "#10b981" },
-            KO:   { nombre: "Coca-Cola Co.",          precioMercadoARS: 24080.00, color: "#f40009" },
-            MO:   { nombre: "Altria Group",           precioMercadoARS: 27080.00, color: "#7c3aed" },
-            O:    { nombre: "Realty Income",          precioMercadoARS: 7030.00,  color: "#ec4899" },
-            SPY:  { nombre: "S&P 500 ETF",            precioMercadoARS: 18800.00, color: "#ef4444" },
-            RSP:  { nombre: "S&P 500 Equal Weight",   precioMercadoARS: 10520.00, color: "#06b6d4" },
+            AMZN: { nombre: "Amazon Inc.",           precioMercadoARS: 2950,  color: "#f99f1b" },
+            WMT:  { nombre: "Walmart Inc.",           precioMercadoARS: 3850,  color: "#ffc220" },
+            GOOGL:{ nombre: "Alphabet (Google)",      precioMercadoARS: 9800,  color: "#4285f4" },
+            VIST: { nombre: "Vista Energy",           precioMercadoARS: 36700, color: "#10b981" },
+            KO:   { nombre: "Coca-Cola Co.",          precioMercadoARS: 23510, color: "#f40009" },
+            MO:   { nombre: "Altria Group",           precioMercadoARS: 25840, color: "#7c3aed" },
+            O:    { nombre: "Realty Income",          precioMercadoARS: 5800,  color: "#ec4899" },
+            SPY:  { nombre: "S&P 500 ETF",            precioMercadoARS: 18760, color: "#ef4444" },
+            RSP:  { nombre: "S&P 500 Equal Weight",   precioMercadoARS: 10350, color: "#06b6d4" },
             VWO:  { nombre: "Emerging Markets ETF",   precioMercadoARS: 11950, color: "#84cc16" }
         };
 
@@ -543,51 +543,24 @@
             btn.classList.add('opacity-70', 'cursor-not-allowed');
             icon.className = "fa-solid fa-spinner animate-spin";
             text.innerText = "Buscando precios...";
-            mostrarToast("Consultando cotizaciones de CEDEARs en BYMA con IA...", "info");
+            mostrarToast("Cargando cotizaciones BYMA...", "info");
 
             try {
-                const response = await fetch("https://api.anthropic.com/v1/messages", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        model: "claude-sonnet-4-20250514",
-                        max_tokens: 1000,
-                        tools: [{ type: "web_search_20250305", name: "web_search" }],
-                        system: `Sos un analista financiero experto en el mercado argentino (BYMA).
-Tu tarea es buscar las cotizaciones actuales en pesos ARS de los siguientes CEDEARs en BYMA y el valor del Dólar CCL.
-Luego de buscar, respondé ÚNICAMENTE con un objeto JSON válido, sin texto adicional, sin bloques de código, sin backticks.
-El JSON debe tener exactamente estas claves: AMZN, WMT, GOOGL, VIST, KO, MO, O, SPY, RSP, VWO, ccl.
-Todos los valores deben ser números (precio en ARS). Si no encontrás el precio real de alguno, estimá en base al precio en USD × CCL × ratio del CEDEAR.`,
-                        messages: [{
-                            role: "user",
-                            content: `Buscá en la web los precios de cierre actuales en pesos ARS de estos CEDEARs en BYMA (Bolsa y Mercados Argentinos): AMZN, WMT, GOOGL, VIST, KO, MO, O, SPY, RSP, VWO. También buscá el valor del Dólar CCL (Contado con Liquidación) de hoy. Devolvé solo el JSON con los precios, sin ningún texto adicional.`
-                        }]
-                    })
-                });
+                // Carga precios_cedears.json generado automáticamente por GitHub Actions
+                // El parámetro ?t= evita que el navegador use una versión cacheada
+                const url = `./precios_cedears.json?t=${Date.now()}`;
+                const response = await fetch(url);
 
                 if (!response.ok) {
-                    const errBody = await response.text();
-                    throw new Error(`HTTP ${response.status}: ${errBody}`);
+                    throw new Error(`No se encontró precios_cedears.json (HTTP ${response.status}). Verificá que el archivo esté en el repositorio.`);
                 }
 
                 const data = await response.json();
+                const precios = data.precios_ars;
 
-                let jsonText = null;
-                if (Array.isArray(data.content)) {
-                    const textBlocks = data.content.filter(b => b.type === "text");
-                    if (textBlocks.length > 0) {
-                        jsonText = textBlocks[textBlocks.length - 1].text;
-                    }
+                if (!precios || typeof precios !== 'object') {
+                    throw new Error("El archivo JSON no tiene el formato esperado.");
                 }
-
-                if (!jsonText) throw new Error("No se recibió respuesta de texto de la IA.");
-
-                jsonText = jsonText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
-
-                const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
-                if (!jsonMatch) throw new Error("No se encontró un objeto JSON válido en la respuesta.");
-
-                const precios = JSON.parse(jsonMatch[0]);
 
                 let actualizados = 0;
                 Object.keys(activosConfig).forEach(ticker => {
@@ -597,29 +570,24 @@ Todos los valores deben ser números (precio en ARS). Si no encontrás el precio
                     }
                 });
 
-                if (precios.ccl && typeof precios.ccl === 'number' && precios.ccl > 0) {
-                    document.getElementById('ccl-input').value = precios.ccl.toFixed(2);
-                    mostrarToast(`CCL actualizado a $${precios.ccl.toFixed(2)}`, "info");
-                }
-
                 safeStorage.setItem('mi_retiro_precios_custom', JSON.stringify(preciosMercadoCustom));
 
-                const now = new Date();
-                const timeString = `En vivo: ${now.toLocaleDateString('es-AR')} ${now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`;
+                const fechaJson = data.fecha || new Date().toLocaleString('es-AR');
+                const timeString = `Precios: ${fechaJson} hs`;
                 document.getElementById('last-update-time').innerText = timeString;
                 safeStorage.setItem('mi_retiro_last_update_time', timeString);
 
                 recalcularPortafolio();
-                mostrarToast(`¡${actualizados} activos actualizados con éxito via Claude AI!`, "success");
+                mostrarToast(`¡${actualizados} CEDEARs actualizados desde BYMA (ARS)!`, "success");
 
             } catch (err) {
                 console.error("Error al actualizar precios:", err);
-                mostrarToast(`No se pudieron obtener precios en vivo: ${err.message}`, "error");
+                mostrarToast(`No se pudieron cargar los precios: ${err.message}`, "error");
             } finally {
                 btn.disabled = false;
                 btn.classList.remove('opacity-70', 'cursor-not-allowed');
                 icon.className = "fa-solid fa-wand-magic-sparkles animate-pulse";
-                text.innerText = "Actualizar Cotizaciones (IA)";
+                text.innerText = "Actualizar Cotizaciones";
             }
         }
 
