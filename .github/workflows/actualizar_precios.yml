@@ -1,25 +1,19 @@
-name: Actualizar precios CEDEAR
+name: Actualizar Precios CEDEARs
 
 on:
   schedule:
-    # Lunes a viernes, hora Argentina (UTC-3):
-    #   11:00 hs → cron 14:00 UTC
-    #   15:00 hs → cron 18:00 UTC
-    #   18:00 hs → cron 21:00 UTC
-    - cron: '0 14 * * 1-5'
-    - cron: '0 18 * * 1-5'
+    # Lunes a viernes a las 21:00 UTC = 18:00 Argentina
     - cron: '0 21 * * 1-5'
-  workflow_dispatch:   # permite ejecutarlo manualmente desde GitHub
-
-permissions:
-  contents: write
+  workflow_dispatch:  # permite ejecutarlo manualmente también
 
 jobs:
-  actualizar-precios:
+  actualizar:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
-      - name: Descargar repositorio
+      - name: Checkout del repositorio
         uses: actions/checkout@v4
 
       - name: Configurar Python
@@ -27,14 +21,16 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Obtener precios y actualizar index.html
-        run: python obtener_precios_cedears.py --html index.html
+      - name: Instalar dependencias
+        run: pip install yfinance pytz
 
-      - name: Guardar cambios en el repositorio
+      - name: Ejecutar script de precios
+        run: python .github/scripts/actualizar_precios.py
+
+      - name: Commitear precios_cedears.json
         run: |
-          git config user.name  "github-actions[bot]"
+          git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.html precios_cedears.json
-          git diff --staged --quiet \
-            || git commit -m "Precios CEDEAR actualizados $(date +'%d/%m/%Y %H:%M') hs"
+          git add precios_cedears.json
+          git diff --staged --quiet || git commit -m "chore: actualizar precios CEDEARs $(date +'%d/%m/%Y %H:%M')"
           git push
