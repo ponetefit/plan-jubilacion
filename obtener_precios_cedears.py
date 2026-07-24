@@ -1,42 +1,30 @@
-import json
-import datetime
-import pytz
-import yfinance as yf
+name: Actualizar Precios CEDEARs
 
-TICKERS = {
-    "AMZN": "AMZN.BA",
-    "WMT":  "WMT.BA",
-    "GOOGL":"GOOGL.BA",
-    "VIST": "VIST.BA",
-    "KO":   "KO.BA",
-    "MO":   "MO.BA",
-    "O":    "O.BA",
-    "SPY":  "SPY.BA",
-    "RSP":  "RSP.BA",
-    "VWO":  "VWO.BA"
-}
+on:
+  schedule:
+    - cron: '0 21 * * 1-5'
+  workflow_dispatch:
 
-precios = {}
-for nombre, ticker_ba in TICKERS.items():
-    try:
-        data = yf.Ticker(ticker_ba).fast_info
-        precio = data.last_price
-        if precio and precio > 0:
-            precios[nombre] = round(float(precio), 2)
-    except Exception as e:
-        print(f"  {nombre}: error — {e}")
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
-tz_ar = pytz.timezone("America/Argentina/Buenos_Aires")
-ahora = datetime.datetime.now(tz_ar).strftime("%d/%m/%Y %H:%M")
+    steps:
+      - uses: actions/checkout@v4
 
-resultado = {
-    "fecha": ahora,
-    "moneda": "ARS",
-    "fuente": "Yahoo Finance · BYMA",
-    "precios_ars": precios
-}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-with open("precios_cedears.json", "w", encoding="utf-8") as f:
-    json.dump(resultado, f, ensure_ascii=False, indent=2)
+      - run: pip install yfinance pytz
 
-print(f"Listo: {len(precios)} precios guardados — {ahora}")
+      - run: python actualizar_precios.py
+
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add precios_cedears.json
+          git diff --staged --quiet || git commit -m "precios $(date +'%d/%m/%Y %H:%M')"
+          git push
