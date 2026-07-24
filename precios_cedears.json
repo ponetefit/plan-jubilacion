@@ -1,28 +1,46 @@
-{
-  "fecha": "23/07/2026 19:03",
-  "moneda": "ARS",
-  "fuente": "Yahoo Finance · BYMA",
-  "tickers_ba": {
+import json
+import datetime
+import pytz
+import yfinance as yf
+
+TICKERS = {
     "AMZN": "AMZN.BA",
-    "WMT": "WMT.BA",
-    "GOOGL": "GOOGL.BA",
+    "WMT":  "WMT.BA",
+    "GOOGL":"GOOGL.BA",
     "VIST": "VIST.BA",
-    "KO": "KO.BA",
-    "MO": "MO.BA",
-    "O": "O.BA",
-    "SPY": "SPY.BA",
-    "RSP": "RSP.BA",
-    "VWO": "VWO.BA"
-  },
-  "precios_ars": {
-    "AMZN": 2577.5,
-    "WMT": 9555.0,
-    "GOOGL": 8720.0,
-    "VIST": 36640.0,
-    "KO": 25760.0,
-    "MO": 28540.0,
-    "O": 7875.0,
-    "SPY": 19500.0,
-    "RSP": 11190.0
-  }
+    "KO":   "KO.BA",
+    "MO":   "MO.BA",
+    "O":    "O.BA",
+    "SPY":  "SPY.BA",
+    "RSP":  "RSP.BA",
+    "VWO":  "VWO.BA"
 }
+
+precios = {}
+for nombre, ticker_ba in TICKERS.items():
+    try:
+        data = yf.Ticker(ticker_ba).fast_info
+        precio = data.last_price
+        if precio and precio > 0:
+            precios[nombre] = round(float(precio), 2)
+            print(f"  {nombre}: ${precio:,.2f} ARS")
+        else:
+            print(f"  {nombre}: sin precio")
+    except Exception as e:
+        print(f"  {nombre}: error — {e}")
+
+tz_ar = pytz.timezone("America/Argentina/Buenos_Aires")
+ahora = datetime.datetime.now(tz_ar).strftime("%d/%m/%Y %H:%M")
+
+resultado = {
+    "fecha":      ahora,
+    "moneda":     "ARS",
+    "fuente":     "Yahoo Finance · BYMA",
+    "tickers_ba": TICKERS,
+    "precios_ars": precios
+}
+
+with open("precios_cedears.json", "w", encoding="utf-8") as f:
+    json.dump(resultado, f, ensure_ascii=False, indent=2)
+
+print(f"\nArchivo generado con {len(precios)} tickers — {ahora}")
