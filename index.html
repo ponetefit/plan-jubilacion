@@ -436,15 +436,40 @@
                         <i class="fa-solid fa-chart-pie text-purple-500 mr-2"></i> Diversificación por Sector
                     </h2>
                 </div>
-                <div class="flex items-center gap-6">
-                    <div class="relative flex-shrink-0" style="width:140px;height:140px;">
+                <div class="flex flex-col items-center gap-4">
+                    <div class="relative" style="width:200px;height:200px;">
                         <canvas id="sector-chart"></canvas>
+                        <div id="sector-center-label" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span class="text-[10px] text-gray-500 uppercase tracking-wider">Sectores</span>
+                            <span id="sector-center-count" class="text-lg font-bold text-white">0</span>
+                        </div>
                     </div>
-                    <div id="sector-lista" class="flex-1 space-y-2.5"></div>
+                    <div id="sector-lista" class="w-full space-y-2"></div>
                 </div>
             </div>
 
         </div>
+
+        <!-- NUEVO: Gráfico de peso por CEDEAR -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-xl mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-base font-bold text-white flex items-center">
+                    <i class="fa-solid fa-chart-pie text-emerald-500 mr-2"></i> Composición del Portafolio por CEDEAR
+                </h2>
+                <span class="text-xs text-gray-400">% sobre valor de mercado total</span>
+            </div>
+            <div class="flex flex-col lg:flex-row items-center gap-8">
+                <div class="relative flex-shrink-0" style="width:260px;height:260px;">
+                    <canvas id="cedear-pie-chart"></canvas>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider">Total</span>
+                        <span id="cedear-pie-total" class="text-base font-bold text-white">$ 0</span>
+                    </div>
+                </div>
+                <div id="cedear-pie-lista" class="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+            </div>
+        </div>
+
         <!-- ── FIN SECCIÓN JUBILACIÓN ──────────────────────────────────────── -->
 
     </main>
@@ -1445,6 +1470,10 @@
 
             const entradas = Object.entries(porSector).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
 
+            // Actualizar label central
+            const centerCount = document.getElementById('sector-center-count');
+            if (centerCount) centerCount.textContent = entradas.length;
+
             const listaEl = document.getElementById('sector-lista');
             if (listaEl) {
                 listaEl.innerHTML = entradas.length === 0
@@ -1453,16 +1482,16 @@
                         const pct   = totalMercado > 0 ? (valor / totalMercado * 100) : 0;
                         const color = SECTORES_COLORS[sector] || '#6b7280';
                         return `
-                            <div class="flex items-center justify-between">
+                            <div class="flex items-center justify-between py-1">
                                 <div class="flex items-center space-x-2">
-                                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${color}"></span>
-                                    <span class="text-xs text-gray-300">${sector}</span>
+                                    <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:${color}"></span>
+                                    <span class="text-xs text-gray-300 font-medium">${sector}</span>
                                 </div>
                                 <div class="flex items-center space-x-2">
-                                    <div class="w-20 bg-gray-800 rounded-full h-1.5">
-                                        <div class="h-1.5 rounded-full" style="width:${pct.toFixed(1)}%;background:${color}"></div>
+                                    <div class="w-24 bg-gray-800 rounded-full h-2">
+                                        <div class="h-2 rounded-full transition-all duration-500" style="width:${pct.toFixed(1)}%;background:${color}"></div>
                                     </div>
-                                    <span class="text-xs font-bold text-gray-200 w-9 text-right">${pct.toFixed(1)}%</span>
+                                    <span class="text-xs font-bold w-10 text-right" style="color:${color}">${pct.toFixed(1)}%</span>
                                 </div>
                             </div>`;
                     }).join('');
@@ -1481,19 +1510,104 @@
                         data:            entradas.map(([, v]) => v),
                         backgroundColor: entradas.map(([s]) => SECTORES_COLORS[s] || '#6b7280'),
                         borderColor:     '#111827',
-                        borderWidth:     2,
-                        hoverOffset:     4
+                        borderWidth:     3,
+                        hoverOffset:     6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    cutout: '65%',
+                    cutout: '60%',
                     plugins: {
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: ctx => ` ${ctx.label}: ${(ctx.parsed / totalMercado * 100).toFixed(1)}%`
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Actualizar también el gráfico por CEDEAR
+            _actualizarGraficoCEDEAR(consolidado, totalMercado);
+        }
+
+        // ─── NUEVO: GRÁFICO DE COMPOSICIÓN POR CEDEAR ───────────────────────────────
+        let cedearPieChartInstance = null;
+
+        function _actualizarGraficoCEDEAR(consolidado, totalMercadoARS) {
+            const items = Object.values(consolidado)
+                .filter(item => item.nominales > 0)
+                .map(item => ({
+                    ticker: item.ticker,
+                    nombre: item.nombre,
+                    valor:  item.nominales * item.precioMercadoARS,
+                    color:  activosConfig[item.ticker]?.color || '#6b7280'
+                }))
+                .sort((a, b) => b.valor - a.valor);
+
+            const total = totalMercadoARS || items.reduce((s, i) => s + i.valor, 0);
+
+            // Label central
+            const divisor = monedaActiva === 'USD' ? getDolarCCL() : 1;
+            const totalEl = document.getElementById('cedear-pie-total');
+            if (totalEl) totalEl.textContent = formatMoneda(total / divisor);
+
+            // Lista lateral
+            const listaEl = document.getElementById('cedear-pie-lista');
+            if (listaEl) {
+                listaEl.innerHTML = items.length === 0
+                    ? '<p class="text-xs text-gray-500 col-span-2">Sin tenencias cargadas aún.</p>'
+                    : items.map(it => {
+                        const pct = total > 0 ? (it.valor / total * 100) : 0;
+                        return `
+                            <div class="flex items-center space-x-3 bg-gray-950/60 border border-gray-800/60 rounded-lg px-3 py-2.5">
+                                <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:${it.color}"></span>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-xs font-bold text-white">${it.ticker}</span>
+                                        <span class="text-xs font-bold" style="color:${it.color}">${pct.toFixed(1)}%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-800 rounded-full h-1.5">
+                                        <div class="h-1.5 rounded-full transition-all duration-500" style="width:${pct.toFixed(1)}%;background:${it.color}"></div>
+                                    </div>
+                                    <span class="text-[10px] text-gray-500 mt-0.5 block">${formatMoneda(it.valor / divisor)}</span>
+                                </div>
+                            </div>`;
+                    }).join('');
+            }
+
+            // Gráfico
+            const canvas = document.getElementById('cedear-pie-chart');
+            if (!canvas || typeof Chart === 'undefined') return;
+            if (cedearPieChartInstance) cedearPieChartInstance.destroy();
+            if (items.length === 0) return;
+
+            cedearPieChartInstance = new Chart(canvas.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: items.map(i => i.ticker),
+                    datasets: [{
+                        data:            items.map(i => i.valor),
+                        backgroundColor: items.map(i => i.color),
+                        borderColor:     '#111827',
+                        borderWidth:     3,
+                        hoverOffset:     8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    cutout: '62%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    const pct = total > 0 ? (ctx.parsed / total * 100).toFixed(1) : 0;
+                                    return ` ${ctx.label}: ${pct}% (${formatMoneda(ctx.parsed / divisor)})`;
+                                }
                             }
                         }
                     }
