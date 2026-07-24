@@ -1,0 +1,16 @@
+{
+  "fecha": "23/07/2026 22:38",
+  "moneda": "ARS",
+  "fuente": "Yahoo Finance · BYMA",
+  "precios_ars": {
+    "AMZN": 2577.5,
+    "WMT": 9555.0,
+    "GOOGL": 8720.0,
+    "VIST": 36640.0,
+    "KO": 25760.0,
+    "MO": 28540.0,
+    "O": 7875.0,
+    "SPY": 19500.0,
+    "RSP": 11190.0
+  }
+}
