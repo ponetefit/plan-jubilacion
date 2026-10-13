@@ -1,12 +1,12 @@
 {
-  "fecha": "09/10/2026 21:22",
+  "fecha": "12/10/2026 23:17",
   "moneda": "ARS",
   "fuente": "Yahoo Finance · BYMA",
   "precios_ars": {
     "AMZN": 2950.0,
     "WMT": 9980.0,
     "GOOGL": 9810.0,
-    "VIST": 35660.0,
+    "VIST": 35740.0,
     "KO": 28500.0,
     "MO": 28860.0,
     "O": 6740.0,
